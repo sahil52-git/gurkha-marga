@@ -19,7 +19,7 @@ if (isset($_SESSION["contact_message"])) {
 
 // Redirect to dashboard if already logged in
 if (isset($_SESSION["user_id"])) {
-  header("Location: dashboard.php");
+  header("Location: /users/dashboard.php");
   exit();
 }
 ?>
@@ -1409,8 +1409,8 @@ if (isset($_SESSION["user_id"])) {
                 <li><a href="#about" class="nav-link">About</a></li>
                 <li><a href="#testimonials" class="nav-link">Success Stories</a></li>
                 <li><a href="#contact" class="nav-link">Contact</a></li>
-                <li><a href="login.php" class="btn btn-outline-white">Login</a></li>
-                <li><a href="register.php" class="btn btn-primary-gradient">Get Started</a></li>
+                <li><a href="../auth/login.php" class="btn btn-outline-white">Login</a></li>
+                <li><a href="../auth/register.php" class="btn btn-primary-gradient">Get Started</a></li>
             </ul>
             <div class="mobile-menu-toggle" id="mobileToggle">
                 <span></span>
@@ -1897,7 +1897,7 @@ if (isset($_SESSION["user_id"])) {
             <div class="footer-content-modern">
                 <div class="footer-brand">
                     <div class="footer-logo">
-                        <img src="\frontend\image\gurkhalogo.png" alt="Loading....">
+                        <img src="../image/gurkhalogo.png" alt="Gurkha Marga Logo">
                         <span>Gurkha Marga</span>
                     </div>
                     <p>Empowering youth with the right guidance for army recruitment. Your success is our mission.</p>

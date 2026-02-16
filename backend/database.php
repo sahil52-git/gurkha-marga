@@ -2,6 +2,8 @@
 /**
  * Database Configuration and Helper Functions
  * Gurkha Marga - Army Recruitment Platform
+ * 
+ * FIXED VERSION - Removed PDO::MYSQL_ATTR_INIT_COMMAND constant
  */
 
 // Database Configuration
@@ -23,21 +25,24 @@ function getDB() {
     
     if ($pdo === null) {
         try {
+            // Include charset in DSN (no need for MYSQL_ATTR_INIT_COMMAND)
             $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+            
+            // Simplified options without MYSQL_ATTR_INIT_COMMAND
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
+                PDO::ATTR_EMULATE_PREPARES   => false
             ];
             
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            
         } catch (PDOException $e) {
             // Log error (don't expose to user)
             error_log('Database Connection Error: ' . $e->getMessage());
             
             // Display user-friendly error
-            die('Database connection failed. Please try again later.');
+            die('Database connection failed. Please check if MySQL is running and database exists.');
         }
     }
     
@@ -184,5 +189,5 @@ function verifyPassword($password, $hash) {
     return password_verify($password, $hash);
 }
 
-// Initialize database connection on include
-getDB();
+// Initialize database connection on include (removed to prevent error on page load)
+// Call getDB() when you actually need the connection

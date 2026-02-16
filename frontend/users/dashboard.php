@@ -1,19 +1,24 @@
-<!-- <?php
+<?php
 session_start();
-require_once '../config/database.php';
-require_once '../includes/jwt.php';
+
+// Define base path - from frontend/users/ go up 2 levels to reach root
+define('BASE_PATH', dirname(dirname(dirname(__FILE__))));
+
+// Include required files with correct paths
+require_once BASE_PATH . '/backend/database.php';
+require_once BASE_PATH . '/frontend/auth/jwt.php';
 
 // Check authentication
 $token = JWT::getTokenFromCookie();
 if (!$token) {
-    header('Location: login.php');
+    header('Location: ../auth/login.php');
     exit();
 }
 
 $user = JWT::getUserFromToken($token);
 if (!$user) {
     JWT::clearTokenCookie();
-    header('Location: login.php');
+    header('Location: ../auth/login.php');
     exit();
 }
 
@@ -680,7 +685,7 @@ $recentAchievements = [
                 </svg>
                 Settings
             </a>
-            <a href="logout.php" class="nav-item">
+            <a href="../auth/logout.php" class="nav-item">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
@@ -777,7 +782,7 @@ $recentAchievements = [
                 <?php if (empty($upcomingWorkouts)): ?>
                     <div class="empty-state">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M128v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <p>No upcoming workouts scheduled</p>
                     </div>
@@ -962,4 +967,4 @@ $recentAchievements = [
         });
     </script>
 </body>
-</html> -->
+</html>

@@ -440,7 +440,7 @@ body {
         </div>
         <div style="display:flex;gap:.5rem;align-items:center">
             <?php if ($isPremium): ?>
-            <a href="questions.php" class="btn btn-primary">🎯 Start Quiz</a>
+            <a href="questions.php" class="btn btn-primary"> Start Quiz</a>
             <?php if (function_exists('getUserConsultants')): ?>
             <a href="chat.php" class="btn btn-outline">💬 Chat</a>
             <?php endif; ?>
@@ -476,7 +476,7 @@ body {
                 &nbsp;·&nbsp; <?= daysRemaining($userId) ?> days remaining
             </div>
             <div class="active-sub-actions">
-                <a href="questions.php" class="btn btn-gold" style="font-size:.8rem;padding:.45rem 1rem">🎯 Quiz Practice</a>
+                <a href="questions.php" class="btn btn-gold" style="font-size:.8rem;padding:.45rem 1rem"> Quiz Practice</a>
                 <a href="chat.php" class="btn btn-outline" style="font-size:.8rem;padding:.45rem 1rem">💬 Chat with Expert</a>
             </div>
         </div>

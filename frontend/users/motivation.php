@@ -3,6 +3,7 @@
 session_start();
 define('BASE_PATH', dirname(dirname(dirname(__FILE__))));
 require_once BASE_PATH . '/backend/database.php';
+require_once BASE_PATH . '/backend/config/EmailConfig.php'; // ← ADD THIS LINE
 
 if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
     if (!empty($_GET['action'])) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit(); }
@@ -29,10 +30,10 @@ $firstName = explode(' ', $user['full_name'])[0];
 $initials  = strtoupper(substr($user['full_name'], 0, 1));
 $userEmail = $user['email'] ?? '';
 
-$avatarType   = $user['avatar_type']   ?? 'initial';
-$profilePhoto = $user['profile_photo'] ?? null;
-$avatarConfig = !empty($user['avatar_config']) ? json_decode($user['avatar_config'], true) : null;
-$photoUrl     = $profilePhoto ? '/gurkha-marga/frontend/uploads/avatars/' . htmlspecialchars($profilePhoto) : null;
+$avatarType       = $user['avatar_type']   ?? 'initial';
+$profilePhoto     = $user['profile_photo'] ?? null;
+$avatarConfig     = !empty($user['avatar_config']) ? json_decode($user['avatar_config'], true) : null;
+$photoUrl         = $profilePhoto ? '/gurkha-marga/frontend/uploads/avatars/' . htmlspecialchars($profilePhoto) : null;
 $avatarConfigJson = $avatarConfig ? json_encode($avatarConfig) : 'null';
 
 // Motivation row
@@ -46,12 +47,71 @@ $streak  = (int)$motRow['streak_days'];
 $emailOn = (int)$motRow['email_daily'];
 $visits  = (int)$motRow['total_visits'];
 
+// ── All 55 quotes (same array used by the cron) ───────────────────────────
+$ALL_QUOTES = [
+    ["The mountain does not care if you are tired. Neither does the finish line.",                       "Gurkha Proverb"],
+    ["A Gurkha does not ask if the task is possible. He asks only when it must be done.",               "Brigade of Gurkhas"],
+    ["Discipline today is the freedom you earn tomorrow.",                                               "Military Maxim"],
+    ["Your competition is not another man. Your competition is who you were yesterday.",                 "Warrior Philosophy"],
+    ["Pain is temporary. Passing selection is permanent.",                                               "Selection Camp Wisdom"],
+    ["Every sunrise is a battle order. Will you obey it?",                                              "Morning Creed"],
+    ["Iron sharpens iron. Train harder than the standard demands.",                                      "Proverbs 27:17"],
+    ["A warrior is not defined by how many times he stands. He is defined by how many times he rises.", "Ancient Martial Code"],
+    ["The uniform is earned on the training ground, not on selection day.",                              "Gurkha Instructor"],
+    ["Sweat now. Bleed never.",                                                                          "Military Training Doctrine"],
+    ["The man who rises at 5 AM has already won half the battle.",                                       "Sergeant Major's Wisdom"],
+    ["Fear is a liar. Your body can do far more than your mind believes.",                               "Special Forces Manual"],
+    ["You do not get what you wish for. You get what you work for.",                                     "Training Ground Truth"],
+    ["The standards do not lower for anyone. You must rise to meet them.",                               "British Army Tradition"],
+    ["Ayo Gorkhali — and with that cry, mountains have trembled.",                                       "Gurkha Battle Cry"],
+    ["Champions are made in the quiet sessions no one sees.",                                            "Strength Coach Maxim"],
+    ["Run when you are tired. That is when training begins.",                                            "Endurance Coach"],
+    ["You are not tired. You are uncomfortable. There is a difference.",                                 "SAS Selection Instructor"],
+    ["The enemy you will face has also been training. Train harder.",                                    "Intelligence Briefing"],
+    ["A Gurkha's word is his contract. Your commitment today is your contract.",                         "Gurkha Officers Mess"],
+    ["Do not pray for easy battles. Pray to be a stronger fighter.",                                     "West Point Cadet Prayer"],
+    ["Your ancestors ran barefoot through mountains. You have no excuse.",                               "Nepali Hill Training Ethos"],
+    ["The mind breaks first. Train it before you train the body.",                                       "Combat Psychology"],
+    ["Run the route when it is raining. You will never fear rain again.",                                "All-Weather Training"],
+    ["Hard training, easy battle. Easy training, hard battle.",                                          "Suvorov's Maxim"],
+    ["What you do in the darkness will be revealed in the light of selection day.",                      "Training Principle"],
+    ["Character is who you are when no one is watching.",                                                "John Wooden"],
+    ["You are not behind. You are exactly where your effort has placed you.",                            "Honest Reckoning"],
+    ["A soldier's greatest enemy is not the enemy. It is complacency.",                                  "Military Philosophy"],
+    ["The standard you walk past is the standard you accept.",                                           "Australian Army Chief"],
+    ["Be the soldier who does the extra mile when no one assigns it.",                                   "Initiative Doctrine"],
+    ["The only way to get fitter is to show up, every day.",                                             "Training Axiom"],
+    ["A bad day of training is infinitely better than no day of training.",                              "Minimum Effective Dose"],
+    ["Your future self is watching your choices today. Make them proud.",                                "Time Perspective"],
+    ["Silence your doubts the only way that works — with action.",                                       "Action Over Anxiety"],
+    ["The difference between a soldier and a civilian is the willingness to suffer on purpose.",         "Endurance Philosophy"],
+    ["When your legs say stop, your history says continue.",                                             "Legacy Motivation"],
+    ["You have survived 100% of your hardest days so far.",                                              "Resilience Reminder"],
+    ["A man who masters himself can master any terrain.",                                                "Sun Tzu"],
+    ["Your pace in training sets the ceiling for your pace in selection.",                               "Specificity Principle"],
+    ["Rise before the city wakes. Own the morning. Own the day.",                                        "Early Rise Creed"],
+    ["Strength does not shout. It endures quietly and arrives on time.",                                 "The Silent Warrior"],
+    ["Do not count the miles you have run. Count the days you did not stop.",                            "Consistency Over Distance"],
+    ["Commitment is doing what you said long after the mood that inspired it has left.",                 "Darren Hardy"],
+    ["Your selection day is a single day. Your preparation is every other day.",                         "Preparation Arithmetic"],
+    ["The best preparation for tomorrow is the complete execution of today.",                            "Daily Excellence"],
+    ["A warrior eats to fuel, not to comfort.",                                                          "Nutritional Purpose"],
+    ["Do not let a good day soften a great week. Maintain.",                                             "Complacency Warning"],
+    ["Discipline is remembering what you want most, over what you want now.",                            "Discipline Definition"],
+    ["Train until you cannot get it wrong.",                                                             "Mastery Standard"],
+    ["Your body will give what your mind insists upon.",                                                 "Mind Command"],
+    ["The last month of preparation is the most important month. Treat it accordingly.",                 "Final Month Gravity"],
+    ["What you believe about yourself under pressure is what you will perform.",                         "Belief Performance Link"],
+    ["The only question selection asks is: are you ready? Answer with your training record.",            "Training as Answer"],
+    ["365 days. A warrior's year. Now begin again — stronger, wiser, and already ahead.",               "Year Complete"],
+];
+
 // AJAX actions
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 if ($action === 'mark_visit') {
     header('Content-Type: application/json');
-    $last = $motRow['last_visit'] ?? '';
+    $last      = $motRow['last_visit'] ?? '';
     $today     = date('Y-m-d');
     $yesterday = date('Y-m-d', strtotime('-1 day'));
     if ($last === $today) {
@@ -76,21 +136,159 @@ if ($action === 'toggle_email') {
     exit();
 }
 
+// ── FIX: send_test_email now uses PHPMailer sendMail() ────────────────────
 if ($action === 'send_test_email') {
     header('Content-Type: application/json');
-    $dayIdx = (int)date('z');
-    $testQuotes = [
-        "The mountain does not care if you are tired. Neither does the finish line.",
-        "A Gurkha does not ask if the task is possible. He asks only when it must be done.",
-        "Discipline today is the freedom you earn tomorrow.",
-        "Your competition is not another man. Your competition is who you were yesterday.",
-        "Pain is temporary. Passing selection is permanent.",
-    ];
-    $quote   = $testQuotes[$dayIdx % count($testQuotes)];
-    $subject = "Your Daily Gurkha Marga Motivation — " . date('d F Y');
-    $body    = "Namaste {$firstName},\n\n\"{$quote}\"\n\nStreak: {$streak} days.\n\n— Gurkha Marga Team";
-    $sent    = @mail($userEmail, $subject, $body, "From: noreply@gurkhamarga.com\r\nContent-Type: text/plain; charset=UTF-8");
-    echo json_encode(['sent' => $sent, 'to' => $userEmail, 'quote' => $quote]);
+
+    $dayIdx      = (int) date('z');
+    $quoteRow    = $ALL_QUOTES[$dayIdx % count($ALL_QUOTES)];
+    $quoteText   = $quoteRow[0];
+    $quoteSource = $quoteRow[1];
+    $dayLabel    = 'Day ' . ($dayIdx + 1) . ' of 365';
+    $dateLabel   = date('l, d F Y');
+    $progressPct = min(100, (int) round(($dayIdx + 1) / 365 * 100));
+    $progressBar = str_repeat('█', (int)($progressPct / 5))
+                 . str_repeat('░', 20 - (int)($progressPct / 5));
+
+    // Streak label
+    if ($streak >= 100) {
+        $streakMsg = "🏆 {$streak}-day streak — century soldier.";
+    } elseif ($streak >= 30) {
+        $streakMsg = "🔥 {$streak}-day streak — habit fully formed.";
+    } else {
+        $streakMsg = "🔥 {$streak}-day streak — keep going.";
+    }
+
+    $safeFirst   = htmlspecialchars($firstName,   ENT_QUOTES, 'UTF-8');
+    $safeForce   = htmlspecialchars($forceName,   ENT_QUOTES, 'UTF-8');
+    $safeQuote   = htmlspecialchars($quoteText,   ENT_QUOTES, 'UTF-8');
+    $safeSource  = htmlspecialchars($quoteSource, ENT_QUOTES, 'UTF-8');
+    $safeStreak  = htmlspecialchars($streakMsg,   ENT_QUOTES, 'UTF-8');
+    $year        = date('Y');
+
+    $subject = "⚔️ {$dayLabel} — Your Gurkha Marga Warrior Quote";
+
+    // ── HTML body (same template as cron) ─────────────────────────────────
+    $body = <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#05080f;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#05080f;padding:30px 10px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a0008,#0a0015);border-radius:16px 16px 0 0;
+                     padding:32px 36px;text-align:center;border:1px solid rgba(200,16,46,.3);border-bottom:none;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">⚔️</div>
+            <div style="font-size:1.8rem;font-weight:800;letter-spacing:.1em;color:#f0c040;">GURKHA MARGA</div>
+            <div style="font-size:.72rem;color:#3d4f6e;letter-spacing:.18em;text-transform:uppercase;margin-top:4px;">ELITE FITNESS PLATFORM</div>
+            <div style="margin-top:16px;display:inline-block;padding:5px 18px;border-radius:99px;
+                        background:rgba(200,16,46,.15);border:1px solid rgba(200,16,46,.3);
+                        font-size:.75rem;color:#ff7090;letter-spacing:.1em;font-family:monospace;">
+              {$dayLabel} &nbsp;·&nbsp; {$dateLabel}
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#0a1020;padding:36px 36px 28px;
+                     border-left:1px solid rgba(200,16,46,.3);border-right:1px solid rgba(200,16,46,.3);">
+            <div style="font-size:3rem;color:rgba(240,192,64,.15);line-height:.8;font-family:Georgia,serif;margin-bottom:8px;">"</div>
+            <div style="font-family:Georgia,serif;font-size:1.25rem;font-style:italic;font-weight:600;
+                        color:#edf2fc;line-height:1.7;border-left:3px solid #c8102e;padding-left:18px;">
+              {$safeQuote}
+            </div>
+            <div style="font-size:3rem;color:rgba(240,192,64,.15);line-height:.8;font-family:Georgia,serif;text-align:right;margin-top:4px;">"</div>
+            <div style="font-family:monospace;font-size:.75rem;color:#8a9bbf;margin-top:10px;letter-spacing:.08em;">
+              — {$safeSource} &nbsp;·&nbsp; {$safeForce}
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#0c1525;padding:20px 36px;
+                     border-left:1px solid rgba(200,16,46,.3);border-right:1px solid rgba(200,16,46,.3);">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="width:50%;padding-right:10px;vertical-align:top;">
+                  <div style="background:#0a1020;border-radius:10px;padding:14px 16px;
+                              border:1px solid rgba(240,192,64,.15);text-align:center;">
+                    <div style="font-size:1.4rem;margin-bottom:4px;">🔥</div>
+                    <div style="font-size:.82rem;font-weight:700;color:#f0c040;line-height:1.4;">{$safeStreak}</div>
+                  </div>
+                </td>
+                <td style="width:50%;padding-left:10px;vertical-align:top;">
+                  <div style="background:#0a1020;border-radius:10px;padding:14px 16px;
+                              border:1px solid rgba(46,124,246,.15);text-align:center;">
+                    <div style="font-size:.65rem;color:#3d4f6e;letter-spacing:.1em;text-transform:uppercase;
+                                font-family:monospace;margin-bottom:6px;">YEAR PROGRESS</div>
+                    <div style="font-family:monospace;font-size:.65rem;color:#2e7cf6;word-break:break-all;">{$progressBar}</div>
+                    <div style="font-family:monospace;font-size:.75rem;color:#6ab4ff;margin-top:4px;">{$progressPct}% of 365 days</div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#0a1020;padding:28px 36px;text-align:center;
+                     border-left:1px solid rgba(200,16,46,.3);border-right:1px solid rgba(200,16,46,.3);">
+            <div style="font-size:.88rem;color:#8a9bbf;margin-bottom:18px;line-height:1.7;">
+              Namaste <strong style="color:#edf2fc;">{$safeFirst}</strong> —
+              your daily warrior briefing has arrived.<br>
+              Read it. Carry it. Train accordingly.
+            </div>
+            <a href="http://localhost/gurkha-marga/frontend/users/motivation.php"
+               style="display:inline-block;padding:13px 34px;border-radius:8px;
+                      background:linear-gradient(135deg,#c8102e,#8b0000);color:#fff;
+                      text-decoration:none;font-weight:700;font-size:.9rem;letter-spacing:.08em;">
+              🔱 OPEN WARRIOR ZONE
+            </a>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#060b14;border-radius:0 0 16px 16px;padding:18px 36px;text-align:center;
+                     border:1px solid rgba(255,255,255,.05);border-top:none;">
+            <div style="font-size:.72rem;color:#3d4f6e;line-height:1.9;">
+              You receive this because daily emails are enabled on your account.<br>
+              <a href="http://localhost/gurkha-marga/frontend/users/motivation.php"
+                 style="color:#8a9bbf;text-decoration:underline;">Manage email preferences</a>
+              &nbsp;·&nbsp; Gurkha Marga &copy; {$year}
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+HTML;
+
+    // ── Plain-text fallback ────────────────────────────────────────────────
+    $altBody = "GURKHA MARGA — ELITE FITNESS PLATFORM\n"
+             . "----------------------------------------\n"
+             . "{$dayLabel} · {$dateLabel}\n\n"
+             . "Namaste {$firstName},\n\n"
+             . "\"{$quoteText}\"\n"
+             . "— {$quoteSource} · {$forceName}\n\n"
+             . "----------------------------------------\n"
+             . "{$streakMsg}\n\n"
+             . "Open warrior zone: http://localhost/gurkha-marga/frontend/users/motivation.php\n\n"
+             . "Gurkha Marga © {$year}";
+
+    // ── Send via PHPMailer (replaces the broken @mail() call) ─────────────
+    $sent = sendMail($userEmail, $subject, $body, $altBody);
+
+    echo json_encode([
+        'sent'  => $sent,
+        'to'    => $userEmail,
+        'quote' => $quoteText,
+    ]);
     exit();
 }
 
@@ -272,9 +470,7 @@ body {
     transition: opacity .4s ease, transform .4s ease;
 }
 .quote-text.visible { opacity: 1; transform: none; }
-.quote-source {
-    font-size: .72rem; color: var(--t3); font-weight: 500;
-}
+.quote-source { font-size: .72rem; color: var(--t3); font-weight: 500; }
 .quote-actions { display: flex; gap: .5rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .commit-btn {
     padding: .5rem 1.25rem; border-radius: 8px; font-family: 'Poppins', sans-serif;
@@ -311,19 +507,14 @@ body {
 .prog-bar { flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
 .prog-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--success), #34d399); transition: width .8s ease; }
 .prog-count { font-size: .68rem; font-weight: 600; color: var(--t3); white-space: nowrap; }
-.streak-next {
-    font-size: .72rem; color: var(--t2);
-}
+.streak-next { font-size: .72rem; color: var(--t2); }
 .streak-next strong { color: #93c5fd; }
 .streak-stats { display: flex; border-left: 1px solid var(--border); flex-shrink: 0; }
-.streak-stat {
-    padding: 1.25rem 1.25rem; text-align: center; border-right: 1px solid var(--border);
-}
+.streak-stat { padding: 1.25rem 1.25rem; text-align: center; border-right: 1px solid var(--border); }
 .streak-stat:last-child { border-right: none; }
 .streak-stat-num   { font-size: 1.25rem; font-weight: 700; line-height: 1; }
 .streak-stat-label { font-size: .6rem; color: var(--t3); margin-top: 4px; text-transform: uppercase; letter-spacing: .07em; }
 
-/* Milestone pills */
 .ms-row { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
 .ms-pill {
     font-size: .65rem; font-weight: 600; padding: .18rem .55rem; border-radius: 5px;
@@ -349,50 +540,9 @@ body {
 .disc-num   { font-size: .6rem; font-weight: 600; color: var(--t3); letter-spacing: .1em; }
 .disc-title { font-size: .86rem; font-weight: 600; color: var(--t1); line-height: 1.3; }
 .disc-hint  { font-size: .65rem; color: var(--t3); margin-top: .5rem; }
-.disc-back  {
-    display: none; font-size: .77rem; color: var(--t2); line-height: 1.6; margin-top: .5rem;
-}
-.disc-card.open .disc-back  { display: block; }
-.disc-card.open .disc-hint  { display: none; }
-
-/* ── RECORDS TABLE ── */
-.records-list { display: flex; flex-direction: column; gap: .45rem; margin-bottom: 1.5rem; }
-.record-row {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; overflow: hidden; transition: border-color .18s;
-    border-left: 2.5px solid transparent;
-}
-.record-row:hover { border-color: var(--border-hi); }
-.record-row.active-row { border-left-color: var(--accent); }
-.record-header {
-    display: flex; align-items: center; gap: .85rem;
-    padding: .82rem 1.1rem; cursor: pointer; user-select: none;
-}
-.record-header:hover { background: rgba(255,255,255,.02); }
-.record-num {
-    width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
-    background: rgba(59,130,246,.1); display: flex; align-items: center; justify-content: center;
-    font-size: .65rem; font-weight: 700; color: #93c5fd;
-}
-.record-name { flex: 1; font-size: .88rem; font-weight: 600; color: var(--t1); }
-.record-unit { font-size: .7rem; color: var(--t3); font-weight: 500; }
-.record-badge {
-    font-size: .65rem; font-weight: 600; padding: .18rem .55rem; border-radius: 5px; white-space: nowrap;
-    background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2); color: #fca5a5;
-}
-.record-chevron {
-    width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.04);
-    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
-    color: var(--t3); transition: transform .22s, color .18s; flex-shrink: 0;
-}
-.record-chevron svg { width: 10px; height: 10px; stroke: currentColor; fill: none; }
-.record-row.active-row .record-chevron { transform: rotate(180deg); color: var(--accent); }
-.record-body {
-    display: none; border-top: 1px solid var(--border);
-    background: rgba(15,23,42,.4); padding: .85rem 1.1rem 1rem;
-    font-size: .8rem; color: var(--t2); line-height: 1.65; font-style: italic;
-}
-.record-row.active-row .record-body { display: block; }
+.disc-back  { display: none; font-size: .77rem; color: var(--t2); line-height: 1.6; margin-top: .5rem; }
+.disc-card.open .disc-back { display: block; }
+.disc-card.open .disc-hint { display: none; }
 
 /* ── EMAIL SECTION ── */
 .email-row {
@@ -408,10 +558,8 @@ body {
 /* ── ANIMATIONS ── */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .fade { animation: fadeUp .35s ease both; }
-.d1 { animation-delay: .04s; }
-.d2 { animation-delay: .09s; }
-.d3 { animation-delay: .14s; }
-.d4 { animation-delay: .19s; }
+.d1 { animation-delay: .04s; } .d2 { animation-delay: .09s; }
+.d3 { animation-delay: .14s; } .d4 { animation-delay: .19s; }
 
 /* ── MOBILE ── */
 .mobile-fab {
@@ -436,9 +584,7 @@ body {
     .discipline-grid { grid-template-columns: 1fr 1fr; }
     .email-row { flex-direction: column; align-items: flex-start; }
 }
-@media (max-width: 480px) {
-    .discipline-grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 480px) { .discipline-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -488,7 +634,7 @@ body {
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
             Motivation
         </a>
-      <div class="nav-section-title" style="margin-top: .75rem">Account</div>
+        <div class="nav-section-title" style="margin-top: .75rem">Account</div>
         <a href="profile.php" class="nav-item">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             Profile
@@ -497,12 +643,10 @@ body {
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             Settings
         </a>
-        <!-- ★ NEW — Subscription link added below Settings -->
         <a href="subscription_fixed.php" class="nav-item">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             Subscription
         </a>
-        <!-- ★ END NEW -->
         <a href="../auth/logout.php" class="nav-item logout">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             Logout
@@ -529,7 +673,6 @@ body {
 
     <div class="page">
 
-        <!-- Daily Quote -->
         <div class="sec-header fade d1">
             <div class="sec-title">Daily Quote</div>
             <span class="sec-badge">Day <?= $dayOfYear + 1 ?> / 365</span>
@@ -561,7 +704,6 @@ body {
             </div>
         </div>
 
-        <!-- Streak -->
         <div class="sec-header fade d2">
             <div class="sec-title">Discipline Streak</div>
             <?php if ($earnedMilestone): ?>
@@ -605,7 +747,6 @@ body {
             </div>
         </div>
 
-        <!-- Discipline principles -->
         <div class="sec-header fade d3">
             <div class="sec-title">Discipline Principles</div>
             <span class="sec-badge">16 principles</span>
@@ -613,7 +754,6 @@ body {
 
         <div class="discipline-grid fade d4" id="disciplineGrid"></div>
 
-        <!-- Email section -->
         <div class="sec-header fade d4">
             <div class="sec-title">Daily Email</div>
         </div>
@@ -650,7 +790,6 @@ const DAY_OF_YEAR       = <?= $dayOfYear ?>;
 let   emailOn           = <?= $emailOn ?>;
 const USER_EMAIL        = <?= json_encode($userEmail) ?>;
 
-// ── Avatar ────────────────────────────────────────────────────────────────
 const AV_OPTIONS = {
     bg:[
         {id:'grad1',grad:['#1e3a5f','#2563eb']},{id:'grad2',grad:['#14532d','#16a34a']},
@@ -791,7 +930,6 @@ function renderInitialSb(c) {
     c.appendChild(d);
 }
 
-// ── Quotes ────────────────────────────────────────────────────────────────
 const QUOTES = [
 ["The mountain does not care if you are tired. Neither does the finish line.","Gurkha Proverb"],
 ["A Gurkha does not ask if the task is possible. He asks only when it must be done.","Brigade of Gurkhas"],
@@ -853,15 +991,11 @@ const QUOTES = [
 let currentIdx = DAY_OF_YEAR;
 
 function setQuote(idx) {
-    const q  = QUOTES[idx % QUOTES.length];
+    const q = QUOTES[idx % QUOTES.length];
     const el = document.getElementById('quoteText');
     const sr = document.getElementById('quoteSource');
     el.classList.remove('visible');
-    setTimeout(() => {
-        el.textContent = q[0];
-        sr.textContent = q[1];
-        el.classList.add('visible');
-    }, 200);
+    setTimeout(() => { el.textContent = q[0]; sr.textContent = q[1]; el.classList.add('visible'); }, 200);
 }
 function nextQuote() { currentIdx = (currentIdx + 1) % QUOTES.length; setQuote(currentIdx); }
 function prevQuote() { currentIdx = (currentIdx - 1 + QUOTES.length) % QUOTES.length; setQuote(currentIdx); }
@@ -876,7 +1010,6 @@ function copyQuote() {
     });
 }
 
-// ── Commit / mark visit ───────────────────────────────────────────────────
 function commitToday() {
     const btn = document.getElementById('commitBtn');
     btn.disabled = true;
@@ -890,7 +1023,6 @@ function commitToday() {
         .catch(() => { btn.disabled = false; });
 }
 
-// ── Discipline cards ──────────────────────────────────────────────────────
 const disciplineData = [
     ['Train Daily',       'Soldiers who train daily outperform those who train hard occasionally. Daily wins the long game.'],
     ['Eat to Fuel',       'Food is ammunition. Treat it with the respect of a soldier and his kit.'],
@@ -927,16 +1059,6 @@ const disciplineData = [
     });
 })();
 
-// ── Records accordion ─────────────────────────────────────────────────────
-function toggleRecord(i) {
-    const row = document.getElementById('rec-' + i);
-    if (!row) return;
-    const wasOpen = row.classList.contains('active-row');
-    document.querySelectorAll('.record-row').forEach(r => r.classList.remove('active-row'));
-    if (!wasOpen) row.classList.add('active-row');
-}
-
-// ── Email ─────────────────────────────────────────────────────────────────
 async function toggleEmail() {
     const resp = await fetch('motivation.php?action=toggle_email', { method: 'POST' });
     const data = await resp.json();
@@ -963,12 +1085,11 @@ async function sendTestEmail(btn) {
     try {
         const resp = await fetch('motivation.php?action=send_test_email', { method: 'POST' });
         const data = await resp.json();
-        btn.textContent = data.sent ? 'Sent' : 'Failed';
+        btn.textContent = data.sent ? 'Sent ✓' : 'Failed ✗';
         setTimeout(() => { btn.disabled = false; btn.textContent = orig; }, 3000);
     } catch(e) { btn.textContent = 'Error'; btn.disabled = false; }
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     renderSidebarAvatar();
     setQuote(DAY_OF_YEAR);
@@ -976,7 +1097,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const bar = document.getElementById('progFill');
         if (bar) bar.style.width = Math.min(100, (<?= $streak ?> / 365 * 100)) + '%';
     }, 300);
-
     document.addEventListener('click', e => {
         const sb  = document.getElementById('sidebar');
         const fab = document.querySelector('.mobile-fab');

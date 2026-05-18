@@ -625,10 +625,10 @@ body {
         <!-- View switcher: Quiz or Q&A -->
         <div class="view-switcher fade d2" id="viewSwitcher">
             <button class="view-btn active" id="btnViewQuiz" onclick="switchView('quiz')">
-                🎯 Quiz Practice
+                 Quiz Practice
             </button>
             <button class="view-btn" id="btnViewQA" onclick="switchView('qa')">
-                📚 Q&amp;A Library
+                 Q&amp;A Library
                 <span class="nav-badge" style="margin-left:4px"><?= $totalQs ?></span>
             </button>
         </div>

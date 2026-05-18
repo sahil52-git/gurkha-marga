@@ -74,76 +74,11 @@ if (isset($_SESSION["user_id"])) {
         
         <div class="container">
             <div class="hero-content-modern">
-                <!-- <div class="hero-badge">
-                    <span class="badge-icon">🎖️</span>
-                    <span>Trusted by Aspirants</span>
-                </div> -->
                 
                 <h1 class="hero-title-modern">
                     Transform Your Dream Into
                     <span class="gradient-text">Reality</span>
                 </h1>
-<!--                 
-                <p class="hero-subtitle-modern">
-                    Join Nepal's #1 free platform for army recruitment preparation. 
-                    Get personalized training, expert guidance, and succeed in your journey to become a Gurkha.
-                </p>
-                
-                <div class="hero-cta-modern">
-                    <a href="#eligibility" class="btn btn-hero-primary">
-                        <span>Check Your Eligibility</span>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </a>
-                    <a href="#features" class="btn btn-hero-secondary">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
-                            <path d="M10 7V10L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        <span>Watch Demo</span>
-                    </a>
-                </div>
-                
-                <div class="hero-stats-modern">
-                    <div class="stat-item-modern">
-                        <div class="stat-icon-wrapper">
-                            <span class="stat-icon">👥</span>
-                        </div>
-                        <div class="stat-content">
-                            <h3>10+</h3>
-                            <p>Active Users</p>
-                        </div>
-                    </div>
-                    <div class="stat-item-modern">
-                        <div class="stat-icon-wrapper">
-                            <span class="stat-icon">💪</span>
-                        </div>
-                        <div class="stat-content">
-                            <h3>50+</h3>
-                            <p>Exercise Guides</p>
-                        </div>
-                    </div>
-                     <div class="stat-item-modern">
-                        <div class="stat-icon-wrapper">
-                            <span class="stat-icon"></span>
-                        </div> 
-                        <div class="stat-content">
-                            <h3>99%</h3>
-                            <p>Free Forever</p>
-                        </div> 
-                    </div>
-                    <div class="stat-item-modern">
-                        <div class="stat-icon-wrapper">
-                            <span class="stat-icon">⭐</span>
-                        </div>
-                        <div class="stat-content">
-                            <h3>4.9/5</h3>
-                            <p>User Rating</p>
-                        </div>
-                    </div>
-                </div>
-            </div> -->
         </div>
         
         <div class="scroll-indicator">

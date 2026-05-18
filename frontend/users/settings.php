@@ -1085,8 +1085,8 @@ if (isset($_POST['action'])) {
                         <span class="info-value"><span class="badge blue">v1.0.0</span></span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Your Account ID</span>
-                        <span class="info-value">#<?= str_pad($userId, 5, '0', STR_PAD_LEFT) ?></span>
+                        <span class="info-label">Contact Number</span>
+                        <span class="info-value">9825992603</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Data Region</span>

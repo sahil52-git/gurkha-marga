@@ -46,24 +46,15 @@ foreach ($workoutsRaw as $w) {
 
     $cleanSteps = [];
     foreach ($steps as $s) {
-        $cleanSteps[] = [
-            'title' => $s['title'] ?? '',
-            'desc'  => $s['desc']  ?? '',
-        ];
+        $cleanSteps[] = ['title' => $s['title'] ?? '', 'desc' => $s['desc'] ?? ''];
     }
     $cleanMuscles = [];
     foreach ($muscles as $m) {
-        $cleanMuscles[] = [
-            'name'  => $m['name']  ?? '',
-            'type'  => $m['type']  ?? 'Primary',
-            'color' => $m['color'] ?? '#3b82f6',
-        ];
+        $cleanMuscles[] = ['name' => $m['name'] ?? '', 'type' => $m['type'] ?? 'Primary', 'color' => $m['color'] ?? '#3b82f6'];
     }
     $cleanTips = [];
     foreach ($tips as $t) {
-        $cleanTips[] = [
-            'text' => $t['text'] ?? '',
-        ];
+        $cleanTips[] = ['text' => $t['text'] ?? ''];
     }
 
     $thumbFile = !empty($w['thumb_image'])
@@ -301,7 +292,12 @@ body {
     height: 170px; background: rgba(15,23,42,.8);
     position: relative; overflow: hidden; flex-shrink: 0;
 }
-.card-thumb canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; }
+/* Canvas injected via JS must fill container */
+.card-thumb canvas {
+    position: absolute !important; inset: 0 !important;
+    width: 100% !important; height: 100% !important;
+    display: block !important; z-index: 1;
+}
 .card-thumb-img {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; z-index: 1;
@@ -428,7 +424,6 @@ body {
 .v-btn:hover { border-color: var(--accent); color: var(--text-primary); }
 .v-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-/* Zoom buttons — square, larger icon */
 .v-btn-zoom {
     height: 30px; width: 30px; padding: 0;
     background: rgba(30,41,59,.9); backdrop-filter: blur(6px);
@@ -440,7 +435,6 @@ body {
 .v-btn-zoom:hover { border-color: var(--accent); color: var(--text-primary); background: rgba(59,130,246,.18); }
 .v-btn-zoom:active { transform: scale(.92); }
 
-/* Thin divider between zoom pair and other controls */
 .v-divider { width: 1px; height: 18px; background: var(--border-hi); margin: 0 .1rem; }
 
 .viewer-tag {
@@ -733,51 +727,51 @@ let activeCategory = 'all';
 let activeDiff     = 'all';
 let searchQuery    = '';
 
-// THREE.JS globals
+// ── MODAL THREE.JS globals ────────────────────────────────────────────────────
 let scene3, camera3, renderer3, controls3, mixer3, model3;
 let animPaused = false, currentSpeed = 1;
 const clock3   = new THREE.Clock();
-let loopRunning = false;
-let defCamPos   = new THREE.Vector3();
-let defCamTgt   = new THREE.Vector3();
-const thumbMap  = {};
+let modalLoopRunning = false;
+let defCamPos  = new THREE.Vector3();
+let defCamTgt  = new THREE.Vector3();
 
-// Zoom step factor (each click moves camera 15% closer/farther)
+// ── THUMBNAIL MAP ─────────────────────────────────────────────────────────────
+// Key: String(exercise.id)
+// Each entry stores: { renderer, scene, camera, mixer, model, clock, alive, ready, glbFile }
+// glbFile is stored on the entry so we can verify a canvas truly belongs to its exercise.
+// We NEVER reuse a canvas across different exercise IDs.
+const thumbMap = {};
+
 const ZOOM_FACTOR = 0.15;
 
-// ── ZOOM CONTROLS ─────────────────────────────────────────────────────────────
+// ── ZOOM ──────────────────────────────────────────────────────────────────────
 window.zoomIn = function() {
     if (!camera3 || !controls3) return;
     const dir = new THREE.Vector3().subVectors(camera3.position, controls3.target);
-    const dist = dir.length();
-    const newDist = Math.max(controls3.minDistance, dist * (1 - ZOOM_FACTOR));
-    dir.setLength(newDist);
+    dir.setLength(Math.max(controls3.minDistance, dir.length() * (1 - ZOOM_FACTOR)));
     camera3.position.copy(controls3.target).add(dir);
     controls3.update();
 };
-
 window.zoomOut = function() {
     if (!camera3 || !controls3) return;
     const dir = new THREE.Vector3().subVectors(camera3.position, controls3.target);
-    const dist = dir.length();
-    const newDist = Math.min(controls3.maxDistance, dist * (1 + ZOOM_FACTOR));
-    dir.setLength(newDist);
+    dir.setLength(Math.min(controls3.maxDistance, dir.length() * (1 + ZOOM_FACTOR)));
     camera3.position.copy(controls3.target).add(dir);
     controls3.update();
 };
 
 // ── CATEGORY DROPDOWN ─────────────────────────────────────────────────────────
 function buildCatDropdown() {
-    const dd = document.getElementById('catDropdown');
+    const dd     = document.getElementById('catDropdown');
     const genres = [...new Set(EXERCISES.map(e => e.genre))];
-    const cats = [{ id:'all', label:'All Categories' }, ...genres.map(g => ({ id:g, label: CAT_LABELS[g] || g }))];
+    const cats   = [{ id:'all', label:'All Categories' }, ...genres.map(g => ({ id:g, label: CAT_LABELS[g] || g }))];
     cats.forEach(cat => {
         const count = cat.id === 'all' ? EXERCISES.length : EXERCISES.filter(e => e.genre === cat.id).length;
-        const opt = document.createElement('div');
-        opt.className = 'cat-option' + (cat.id === 'all' ? ' selected' : '');
-        opt.dataset.id = cat.id;
-        opt.innerHTML = `${cat.label} <span class="cat-option-count">${count}</span>`;
-        opt.onclick = () => selectCategory(cat.id, cat.label);
+        const opt   = document.createElement('div');
+        opt.className   = 'cat-option' + (cat.id === 'all' ? ' selected' : '');
+        opt.dataset.id  = cat.id;
+        opt.innerHTML   = `${cat.label} <span class="cat-option-count">${count}</span>`;
+        opt.onclick     = () => selectCategory(cat.id, cat.label);
         dd.appendChild(opt);
     });
 }
@@ -786,7 +780,6 @@ window.toggleCatDropdown = function() {
     document.getElementById('catBtn').classList.toggle('open');
     document.getElementById('catDropdown').classList.toggle('open');
 };
-
 function selectCategory(id, label) {
     activeCategory = id;
     document.getElementById('catBtnLabel').textContent = label;
@@ -796,21 +789,18 @@ function selectCategory(id, label) {
     document.querySelectorAll('.cat-option').forEach(o => o.classList.toggle('selected', o.dataset.id === id));
     renderList();
 }
-
 document.addEventListener('click', e => {
     if (!e.target.closest('.cat-dropdown-wrap')) {
         document.getElementById('catBtn')?.classList.remove('open');
         document.getElementById('catDropdown')?.classList.remove('open');
     }
 });
-
 window.setDiff = function(diff, btn) {
     activeDiff = diff;
     document.querySelectorAll('.diff-pill').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     renderList();
 };
-
 window.handleSearch = function(q) {
     searchQuery = q.toLowerCase();
     renderList();
@@ -831,7 +821,7 @@ const DIFF_PIPS   = { beginner:1, intermediate:2, advanced:3, expert:4 };
 
 function renderList() {
     const filtered = getFiltered();
-    const page = document.getElementById('workoutsPage');
+    const page     = document.getElementById('workoutsPage');
     page.innerHTML = '';
     document.getElementById('filterResults').innerHTML = `<strong>${filtered.length}</strong> exercise${filtered.length !== 1 ? 's' : ''}`;
 
@@ -859,38 +849,73 @@ function renderList() {
         page.appendChild(group);
         const grid = group.querySelector('.exercises-grid');
         grouped[key].forEach(ex => grid.appendChild(buildCard(ex)));
-        setTimeout(() => grouped[key].forEach(ex => { if (ex.glb && !ex.thumb) initThumb(ex); }), 60);
+    });
+
+    // After DOM paint, attach or re-attach thumbnails
+    requestAnimationFrame(() => {
+        filtered.forEach(ex => {
+            // Skip: static image covers the thumb, or no 3D source
+            if (ex.thumb || !ex.glb) return;
+
+            const key  = String(ex.id);
+            const wrap = document.getElementById('thumb-' + ex.id);
+            if (!wrap) return;
+
+            const entry = thumbMap[key];
+
+            if (entry && entry.ready) {
+                // ── Canvas already loaded for THIS exercise — move it into the new DOM slot ──
+                // Verify the canvas belongs to this exact exercise before attaching
+                if (entry.glbFile !== ex.glb) {
+                    // Mismatch — should never happen but guard defensively
+                    console.warn('[thumb] glbFile mismatch for id', ex.id, entry.glbFile, ex.glb);
+                    return;
+                }
+                const cvs    = entry.renderer.domElement;
+                const loadEl = document.getElementById('cload-' + ex.id);
+                if (loadEl) loadEl.remove();
+                if (cvs.parentNode !== wrap) wrap.appendChild(cvs);
+
+            } else if (!entry) {
+                // ── First time — kick off the isolated load for this exercise ──
+                initThumb(ex);
+
+            }
+            // If entry exists but !ready: GLB still loading — the load callback will attach it
+        });
     });
 }
 
 // ── BUILD CARD ────────────────────────────────────────────────────────────────
 function buildCard(ex) {
-    const dc = DIFF_COLORS[ex.difficulty] || '#3b82f6';
-    const dp = DIFF_PIPS[ex.difficulty]   || 1;
+    const dc   = DIFF_COLORS[ex.difficulty] || '#3b82f6';
+    const dp   = DIFF_PIPS[ex.difficulty]   || 1;
     const pips = [1,2,3,4].map(i => `<div class="diff-pip" style="background:${i<=dp?dc:'rgba(255,255,255,.08)'}"></div>`).join('');
 
     const card = document.createElement('div');
     card.className = 'ex-card';
 
-    const thumbInner = ex.thumb
-        ? `<img class="card-thumb-img" src="${ex.thumb}" alt="${ex.title}" onerror="this.style.display='none'">`
-        : (ex.glb
-            ? `<div class="card-load" id="cload-${ex.id}"><div class="spinner"></div></div>`
-            : `<div class="thumb-placeholder" id="cph-${ex.id}">
+    let thumbInner;
+    if (ex.thumb) {
+        thumbInner = `<img class="card-thumb-img" src="${ex.thumb}" alt="${ex.title}" onerror="this.style.display='none'">`;
+    } else if (ex.glb) {
+        thumbInner = `<div class="card-load" id="cload-${ex.id}"><div class="spinner"></div></div>`;
+    } else {
+        thumbInner = `
+            <div class="thumb-placeholder">
                 <div class="ph-icon-block">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/></svg>
                 </div>
                 <div class="ph-label">${ex.title}</div>
-               </div>`);
+            </div>`;
+    }
 
     card.innerHTML = `
         <div class="card-thumb" id="thumb-${ex.id}">
             ${thumbInner}
             <div class="thumb-overlay"></div>
             <span class="diff-badge ${ex.difficulty}">${ex.difficulty}</span>
-            <div class="thumb-play">
-                <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
-            </div>
+            <div class="thumb-play"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>
         </div>
         <div class="card-body">
             <div class="card-title">${ex.title}</div>
@@ -912,82 +937,133 @@ function buildCard(ex) {
     return card;
 }
 
-// ── THUMBNAIL 3D ─────────────────────────────────────────────────────────────
+// ── THUMBNAIL 3D ──────────────────────────────────────────────────────────────
+// Called ONLY the first time for a given exercise.
+// ex.id and ex.glb are captured in closure — they NEVER change for this call.
 function initThumb(ex) {
-    const wrap   = document.getElementById('thumb-' + ex.id);
-    const loadEl = document.getElementById('cload-' + ex.id);
-    if (!wrap || !ex.glb) return;
+    const key    = String(ex.id);
+    const glbSrc = ex.glb;           // ← captured in closure, correct GLB for this exercise
+    const exId   = ex.id;            // ← captured in closure, correct ID
 
-    const w = wrap.offsetWidth || 260, h = wrap.offsetHeight || 170;
+    // Guard: already registered (loading or loaded)
+    if (thumbMap[key]) return;
+
+    // Register immediately to block duplicate calls while loading
+    thumbMap[key] = { ready: false, alive: true, glbFile: glbSrc };
+
+    // Create an isolated renderer for THIS exercise only
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.setClearColor(0x0f172a, 1);
-    renderer.domElement.style.cssText = 'position:absolute;inset:0;width:100%!important;height:100%!important;z-index:1';
-    wrap.appendChild(renderer.domElement);
+
+    const cvs = renderer.domElement;
+    cvs.style.cssText = 'position:absolute;inset:0;width:100%!important;height:100%!important;display:block;z-index:1';
 
     const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, w / h, 0.01, 200);
+    const camera = new THREE.PerspectiveCamera(42, 260 / 170, 0.01, 200);
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dl = new THREE.DirectionalLight(0xfff0e8, 1.2); dl.position.set(3,8,5); scene.add(dl);
-    const fl = new THREE.DirectionalLight(0x3b82f6, 0.2); fl.position.set(-5,2,-3); scene.add(fl);
+    const dl = new THREE.DirectionalLight(0xfff0e8, 1.2); dl.position.set(3, 8, 5);  scene.add(dl);
+    const fl = new THREE.DirectionalLight(0x3b82f6, 0.2); fl.position.set(-5, 2, -3); scene.add(fl);
 
-    new GLTFLoader().load('../../models/' + ex.glb,
+    // Store renderer/scene/camera on the map entry BEFORE the async load
+    thumbMap[key].renderer = renderer;
+    thumbMap[key].scene    = scene;
+    thumbMap[key].camera   = camera;
+    thumbMap[key].clock    = new THREE.Clock();
+
+    new GLTFLoader().load(
+        '../../models/' + glbSrc,
         gltf => {
+            // ── SAFETY CHECK: make sure the wrap for THIS exercise still exists ──
+            // If the user has filtered/searched and this card is no longer in the DOM, abort.
+            const currentWrap = document.getElementById('thumb-' + exId);
+
             const m   = gltf.scene;
             const box = new THREE.Box3().setFromObject(m);
             const sz  = box.getSize(new THREE.Vector3());
             const ctr = box.getCenter(new THREE.Vector3());
 
             m.position.set(-ctr.x, -box.min.y, -ctr.z);
-
             const maxDim = Math.max(sz.x, sz.y, sz.z);
-            const sc = maxDim > 0.01 ? 1.6 / maxDim : 1;
+            const sc     = maxDim > 0.01 ? 1.6 / maxDim : 1;
             m.scale.setScalar(sc);
 
             const scaledH = sz.y * sc;
             const scaledD = Math.max(sz.x, sz.z) * sc;
-
-            const fovR = THREE.MathUtils.degToRad(42);
-            const distH = (scaledH * 0.6) / Math.tan(fovR / 2);
-            const distD = (scaledD * 0.6) / Math.tan(fovR / 2);
-            const dist  = Math.max(distH, distD) * 1.55;
+            const fovR    = THREE.MathUtils.degToRad(42);
+            const dist    = Math.max(
+                (scaledH * 0.6) / Math.tan(fovR / 2),
+                (scaledD * 0.6) / Math.tan(fovR / 2)
+            ) * 1.55;
 
             camera.position.set(0, scaledH * 0.45, dist);
             camera.lookAt(0, scaledH * 0.4, 0);
             scene.add(m);
-
-            if (loadEl) loadEl.style.display = 'none';
 
             let mx = null;
             if (gltf.animations.length) {
                 mx = new THREE.AnimationMixer(m);
                 gltf.animations.forEach(clip => mx.clipAction(clip).play());
             }
-            thumbMap[ex.id] = { renderer, scene, camera, mixer: mx, model: m, clock: new THREE.Clock() };
-            runThumb(ex.id);
+
+            // Size the renderer to the actual wrap dimensions
+            const w = currentWrap ? (currentWrap.offsetWidth  || 260) : 260;
+            const h = currentWrap ? (currentWrap.offsetHeight || 170) : 170;
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+
+            thumbMap[key].mixer = mx;
+            thumbMap[key].model = m;
+            thumbMap[key].ready = true;
+
+            // Remove spinner and attach canvas — ONLY to this exercise's wrap
+            const loadEl = document.getElementById('cload-' + exId);
+            if (loadEl) loadEl.remove();
+
+            if (currentWrap && cvs.parentNode !== currentWrap) {
+                currentWrap.appendChild(cvs);
+            }
+
+            // Start the isolated render loop for this card
+            runThumb(key);
         },
         undefined,
-        () => {
-            if (loadEl) loadEl.style.display = 'none';
-            const ph = document.createElement('div');
-            ph.className = 'thumb-placeholder';
-            ph.innerHTML = `<div class="ph-icon-block"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/></svg></div><div class="ph-label">${ex.title}</div>`;
-            wrap.appendChild(ph);
+        err => {
+            console.warn('[thumb] GLB load failed:', glbSrc, '(exercise id:', exId, ')', err);
+            const loadEl      = document.getElementById('cload-' + exId);
+            const currentWrap = document.getElementById('thumb-' + exId);
+            if (loadEl) loadEl.remove();
+            if (currentWrap) {
+                const ph = document.createElement('div');
+                ph.className = 'thumb-placeholder';
+                ph.innerHTML = `
+                    <div class="ph-icon-block">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
+                        </svg>
+                    </div>
+                    <div class="ph-label">${ex.title}</div>`;
+                currentWrap.appendChild(ph);
+            }
         }
     );
 }
 
-function runThumb(id) {
-    const t = thumbMap[id]; if (!t) return;
-    const loop = () => {
-        requestAnimationFrame(loop);
+// Isolated render loop per card.
+// Checks thumbMap[key].alive so we can kill it if needed.
+function runThumb(key) {
+    const t = thumbMap[key];
+    if (!t || !t.renderer) return;
+    const tick = () => {
+        if (!thumbMap[key] || !thumbMap[key].alive) return;
+        requestAnimationFrame(tick);
         const d = t.clock.getDelta();
         if (t.mixer) t.mixer.update(d);
         if (t.model) t.model.rotation.y += 0.005;
         t.renderer.render(t.scene, t.camera);
     };
-    loop();
+    tick();
 }
 
 // ── MODAL 3D ──────────────────────────────────────────────────────────────────
@@ -1000,8 +1076,8 @@ function initModal3D() {
     renderer3 = new THREE.WebGLRenderer({ antialias: true });
     renderer3.setSize(w, h);
     renderer3.setPixelRatio(Math.min(devicePixelRatio, 2));
-    renderer3.shadowMap.enabled = true;
-    renderer3.shadowMap.type    = THREE.PCFSoftShadowMap;
+    renderer3.shadowMap.enabled   = true;
+    renderer3.shadowMap.type      = THREE.PCFSoftShadowMap;
     renderer3.setClearColor(0x0f172a, 1);
     renderer3.toneMapping         = THREE.ACESFilmicToneMapping;
     renderer3.toneMappingExposure = 1.2;
@@ -1012,25 +1088,24 @@ function initModal3D() {
     camera3 = new THREE.PerspectiveCamera(42, w / h, 0.01, 500);
 
     scene3.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const key  = new THREE.DirectionalLight(0xfff5f0, 1.5); key.position.set(4,10,6);  key.castShadow=true; key.shadow.mapSize.set(2048,2048); scene3.add(key);
-    const fill = new THREE.DirectionalLight(0x3b82f6, 0.3); fill.position.set(-6,3,-4); scene3.add(fill);
-    const rim  = new THREE.DirectionalLight(0x6366f1, 0.18); rim.position.set(0,5,-8);  scene3.add(rim);
+    const kl = new THREE.DirectionalLight(0xfff5f0, 1.5); kl.position.set(4,10,6);  kl.castShadow=true; kl.shadow.mapSize.set(2048,2048); scene3.add(kl);
+    const fl = new THREE.DirectionalLight(0x3b82f6, 0.3); fl.position.set(-6,3,-4); scene3.add(fl);
+    const rl = new THREE.DirectionalLight(0x6366f1, 0.18); rl.position.set(0,5,-8); scene3.add(rl);
 
     const floor = new THREE.Mesh(
         new THREE.CircleGeometry(12, 64),
-        new THREE.MeshStandardMaterial({ color: 0x0a1020, roughness: 0.95 })
+        new THREE.MeshStandardMaterial({ color:0x0a1020, roughness:0.95 })
     );
     floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene3.add(floor);
     scene3.add(new THREE.GridHelper(24, 24, 0x1a2035, 0x141925));
 
     controls3 = new OrbitControls(camera3, renderer3.domElement);
-    controls3.enableDamping  = true;
-    controls3.dampingFactor  = 0.07;
-    controls3.minDistance    = 0.5;
-    controls3.maxDistance    = 60;
-    controls3.maxPolarAngle  = Math.PI * 0.82;
-    // Disable scroll-wheel zoom — users use + / − buttons instead
-    controls3.enableZoom     = false;
+    controls3.enableDamping = true;
+    controls3.dampingFactor = 0.07;
+    controls3.minDistance   = 0.5;
+    controls3.maxDistance   = 60;
+    controls3.maxPolarAngle = Math.PI * 0.82;
+    controls3.enableZoom    = false;
 
     new ResizeObserver(() => {
         const w2 = wrap.offsetWidth, h2 = wrap.offsetHeight;
@@ -1041,18 +1116,21 @@ function initModal3D() {
         }
     }).observe(wrap);
 
-    if (!loopRunning) { loopRunning = true; runLoop(); }
+    if (!modalLoopRunning) { modalLoopRunning = true; runModalLoop(); }
 }
 
-function runLoop() {
-    requestAnimationFrame(runLoop);
+function runModalLoop() {
+    requestAnimationFrame(runModalLoop);
     const d = clock3.getDelta();
     if (mixer3 && !animPaused) mixer3.update(d);
     if (controls3) controls3.update();
     if (renderer3 && scene3 && camera3) renderer3.render(scene3, camera3);
 }
 
-function loadModal3D(glb) {
+// ── loadModal3D: always uses the glbFile string passed directly ───────────────
+// This is the key fix — it never references a global "current exercise" variable.
+// The caller passes the exact glb string for the clicked exercise.
+function loadModal3D(glbFile) {
     const loadEl = document.getElementById('viewerLoading');
     const loadTx = document.getElementById('viewerLoadText');
     if (loadEl) loadEl.style.display = 'flex';
@@ -1070,57 +1148,40 @@ function loadModal3D(glb) {
         model3 = null;
     }
     if (mixer3) { mixer3.stopAllAction(); mixer3 = null; }
-    clock3.getDelta();
+    clock3.getDelta(); // drain accumulated delta
 
-    new GLTFLoader().load('../../models/' + glb,
+    new GLTFLoader().load(
+        '../../models/' + glbFile,
         gltf => {
             model3 = gltf.scene;
-            model3.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }});
+            model3.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
             scene3.add(model3);
 
-            // ── FIT MODEL TO FILL FRAME ON OPEN ────────────────────────────
-            const box    = new THREE.Box3().setFromObject(model3);
-            const sz     = box.getSize(new THREE.Vector3());
-            const ctr    = box.getCenter(new THREE.Vector3());
+            const box = new THREE.Box3().setFromObject(model3);
+            const sz  = box.getSize(new THREE.Vector3());
+            const ctr = box.getCenter(new THREE.Vector3());
 
-            // Centre the model horizontally, sit on floor
             model3.position.set(-ctr.x, -box.min.y, -ctr.z);
-
-            // Normalise to a stable world size
-            const maxDim = Math.max(sz.x, sz.y, sz.z);
-            const sf     = maxDim > 0.01 ? 1.8 / maxDim : 1;
+            const sf = Math.max(sz.x, sz.y, sz.z) > 0.01 ? 1.8 / Math.max(sz.x, sz.y, sz.z) : 1;
             model3.scale.setScalar(sf);
 
-            const scaledH = sz.y  * sf;
-            const scaledW = sz.x  * sf;
-            const scaledD = sz.z  * sf;
-            const maxSpan = Math.max(scaledW, scaledD);
-
-            // ── TIGHT AUTO-FIT: camera sits close enough that the model
-            //    fills ~85% of the viewport height right away. ────────────
+            const scaledH = sz.y * sf;
+            const maxSpan = Math.max(sz.x, sz.z) * sf;
             const fovRad  = THREE.MathUtils.degToRad(camera3.fov);
-            const aspect  = camera3.aspect;
+            const dist    = Math.max(
+                (scaledH * 0.5) / Math.tan(fovRad / 2) * 1.1,
+                (maxSpan * 0.5) / Math.tan((fovRad * camera3.aspect) / 2) * 1.1
+            ) * 1.4;
 
-            // How far back to fit each dimension with 10% padding
-            const distForH = (scaledH * 0.5) / Math.tan(fovRad / 2) * 1.1;
-            const distForW = (maxSpan * 0.5) / Math.tan((fovRad * aspect) / 2) * 1.1;
-
-            // Take the larger — but cap at 1.4× (tight fit, not zoomed-out)
-            const dist = Math.max(distForH, distForW) * 1.4;
-
-            // Eye height at ~55% of model height for a natural perspective
             const eyeH = scaledH * 0.55;
             camera3.position.set(dist * 0.35, eyeH, dist);
-
             const tgt = new THREE.Vector3(0, scaledH * 0.4, 0);
             controls3.target.copy(tgt);
             controls3.update();
 
-            // Store for Reset button
             defCamPos.set(dist * 0.35, eyeH, dist);
             defCamTgt.copy(tgt);
 
-            // Animations
             if (gltf.animations.length) {
                 mixer3 = new THREE.AnimationMixer(model3);
                 const act = mixer3.clipAction(gltf.animations[0]);
@@ -1133,21 +1194,26 @@ function loadModal3D(glb) {
             if (loadEl) loadEl.style.display = 'none';
         },
         p => {
-            if (p.total > 0 && loadTx)
+            if (p.total > 0 && loadTx) {
                 loadTx.textContent = `Loading... ${Math.round(p.loaded / p.total * 100)}%`;
+            }
         },
         err => {
-            console.warn('GLB missing:', glb, err);
-            if (loadEl) loadEl.innerHTML = '<p style="color:#64748b;font-size:.8rem">3D model not available</p>';
+            console.warn('[modal] GLB missing:', glbFile, err);
+            if (loadEl) loadEl.innerHTML = '<p style="color:#64748b;font-size:.8rem;padding:1rem">3D model not available</p>';
         }
     );
 }
 
 // ── OPEN EXERCISE MODAL ───────────────────────────────────────────────────────
+// CRITICAL: look up exercise strictly by numeric id — never by index or title.
+// Pass ex.glb directly into loadModal3D — never via a shared variable.
 window.openExercise = function(id) {
-    const ex = EXERCISES.find(e => e.id === id); if (!ex) return;
+    const ex = EXERCISES.find(e => e.id === id);
+    if (!ex) { console.warn('Exercise not found:', id); return; }
+
     const catLabel = CAT_LABELS[ex.genre] || ex.genre;
-    const dc = DIFF_COLORS[ex.difficulty] || '#3b82f6';
+    const dc       = DIFF_COLORS[ex.difficulty] || '#3b82f6';
 
     document.getElementById('modalCat').textContent      = catLabel.toUpperCase();
     document.getElementById('modalTitle').textContent    = ex.title;
@@ -1157,10 +1223,10 @@ window.openExercise = function(id) {
 
     // Steps
     document.getElementById('stepsList').innerHTML = ex.steps.length
-        ? ex.steps.map((s,i) => `
+        ? ex.steps.map((s, i) => `
             <li class="step-item">
-                <div class="step-num">${i+1}</div>
-                <div class="step-content"><h4>${s.title||'Step '+(i+1)}</h4><p>${s.desc||''}</p></div>
+                <div class="step-num">${i + 1}</div>
+                <div class="step-content"><h4>${s.title || 'Step ' + (i + 1)}</h4><p>${s.desc || ''}</p></div>
             </li>`).join('')
         : '<p class="no-content-msg">No steps added yet.</p>';
 
@@ -1175,16 +1241,16 @@ window.openExercise = function(id) {
 
     // Tips
     document.getElementById('tipsList').innerHTML = ex.tips.length
-        ? ex.tips.map((t,i) => `
+        ? ex.tips.map((t, i) => `
             <li class="tip-item">
-                <span class="tip-lbl">${String(i+1).padStart(2,'0')}</span>
+                <span class="tip-lbl">${String(i + 1).padStart(2, '0')}</span>
                 <span class="tip-text">${t.text}</span>
             </li>`).join('')
         : '<p class="no-content-msg">No tips added yet.</p>';
 
     // Reset tabs
-    document.querySelectorAll('.m-tab').forEach((t,i)   => t.classList.toggle('active', i===0));
-    document.querySelectorAll('.tab-pane').forEach((p,i) => p.classList.toggle('active', i===0));
+    document.querySelectorAll('.m-tab').forEach((t, i)    => t.classList.toggle('active', i === 0));
+    document.querySelectorAll('.tab-pane').forEach((p, i) => p.classList.toggle('active', i === 0));
 
     document.getElementById('exerciseModal').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -1194,14 +1260,16 @@ window.openExercise = function(id) {
     const viewerTag  = document.getElementById('viewerTag');
     const viewerCtrl = document.getElementById('viewerControls');
 
-    canvasWrap.querySelectorAll('img.modal-thumb-img').forEach(i => i.remove());
+    // Remove any previous static image
+    canvasWrap.querySelectorAll('img.modal-thumb-img').forEach(img => img.remove());
 
     if (ex.glb) {
         viewerTag.style.display  = '';
         viewerCtrl.style.display = '';
+        // Short delay to let the modal paint before WebGL init
         requestAnimationFrame(() => setTimeout(() => {
             if (!renderer3) initModal3D();
-            loadModal3D(ex.glb);
+            loadModal3D(ex.glb); // ← THIS exercise's glb, not any shared state
         }, 60));
     } else if (ex.thumb) {
         if (loadingEl) loadingEl.style.display = 'none';
@@ -1241,8 +1309,8 @@ window.setSpeed = function(s) {
     currentSpeed = s;
     if (mixer3) mixer3.timeScale = animPaused ? 0 : s;
     ['btnSlow','btnFast'].forEach(id => document.getElementById(id)?.classList.remove('active'));
-    if (s < 0.7)       document.getElementById('btnSlow')?.classList.add('active');
-    else if (s > 1.2)  document.getElementById('btnFast')?.classList.add('active');
+    if (s < 0.7)      document.getElementById('btnSlow')?.classList.add('active');
+    else if (s > 1.2) document.getElementById('btnFast')?.classList.add('active');
 };
 window.resetCamera = function() {
     if (!camera3 || !controls3) return;

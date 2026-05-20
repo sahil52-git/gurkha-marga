@@ -15,7 +15,7 @@ if (!$user) { session_destroy(); header('Location: ../auth/login.php'); exit(); 
 $sub = getActiveSubscription($userId);
 if (!$sub) { header('Location: subscription_fixed.php?status=upgrade_required'); exit(); }
 
-// ── Bootstrap tables ──────────────────────────────────────────────────────────
+// ── Bootstrap tables 
 foreach ([
     "CREATE TABLE IF NOT EXISTS user_consultants (
         id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL UNIQUE,
@@ -883,6 +883,7 @@ async function handleSend(){
         try{
             const r=await fetch('chat.php',{method:'POST',body:fd});
             const d=await r.json();
+            console.log(d);
             if(d.ok&&d.message?.id){
                 row.style.opacity='1';
                 row.dataset.id=d.message.id;

@@ -295,11 +295,11 @@ if (is_dir($modelsDir)) {
     if ($files) foreach ($files as $f) $glbFiles[] = basename($f);
 }
 if (empty($glbFiles)) {
-    for ($i = 1; $i <= 29; $i++) $glbFiles[] = "exercise{$i}.glb";
+    for ($i = 1; $i <= 8; $i++) $glbFiles[] = "exercise{$i}.glb";
 }
 sort($glbFiles);
 
-// ── Query ─────────────────────────────────────────────────────────────────────
+// ── Query workouts
 $search    = $_GET['search']   ?? '';
 $catFilter = $_GET['category'] ?? '';
 $wPage     = max(1, (int)($_GET['p'] ?? 1));
@@ -789,6 +789,13 @@ $defaultTips    = [['icon'=>'💡','text'=>''],['icon'=>'⚡','text'=>'']];
 
 <script>
 // ── Dynamic row helpers ───────────────────────────────────────────────────────
+
+// createBtn.addEventListener('click',(e)=>{
+//   //get form data and log it (for testing)
+//   e.preventDefault();
+//   const formData = new FormData(createForm);
+//   for (let pair of formData.entries()) {console.log(pair[0]+ ': ' + pair[1]);}
+// })
 function removeRow(btn, counterId) {
   const row = btn.closest('[data-row]') || btn.closest('.dynamic-row');
   if (row) { row.remove(); if (counterId) updateCount(counterId); }

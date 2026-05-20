@@ -31,11 +31,14 @@ function getDB(): PDO {
 }
 
 function query(string $sql, array $params = []): PDOStatement {
+    // echo "Executing SQL: $sql with params: " . json_encode($params) . "\n";
+    // die(); // Remove this line after debugging
     try {
         $stmt = getDB()->prepare($sql);
         $stmt->execute($params);
         return $stmt;
     } catch (PDOException $e) {
+        json_encode(["sql" => $sql, "params" => $params, "error" => $e->getMessage()]);
         error_log('Query Error: ' . $e->getMessage() . ' | SQL: ' . $sql);
         throw $e;
     }

@@ -38,7 +38,7 @@ function query(string $sql, array $params = []): PDOStatement {
         $stmt->execute($params);
         return $stmt;
     } catch (PDOException $e) {
-        json_encode(["sql" => $sql, "params" => $params, "error" => $e->getMessage()]);
+        // json_encode(["sql" => $sql, "params" => $params, "error" => $e->getMessage()]);
         error_log('Query Error: ' . $e->getMessage() . ' | SQL: ' . $sql);
         throw $e;
     }

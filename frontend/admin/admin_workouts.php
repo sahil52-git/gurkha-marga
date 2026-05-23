@@ -788,14 +788,6 @@ $defaultTips    = [['icon'=>'💡','text'=>''],['icon'=>'⚡','text'=>'']];
 <?php endif; ?>
 
 <script>
-// ── Dynamic row helpers ───────────────────────────────────────────────────────
-
-// createBtn.addEventListener('click',(e)=>{
-//   //get form data and log it (for testing)
-//   e.preventDefault();
-//   const formData = new FormData(createForm);
-//   for (let pair of formData.entries()) {console.log(pair[0]+ ': ' + pair[1]);}
-// })
 function removeRow(btn, counterId) {
   const row = btn.closest('[data-row]') || btn.closest('.dynamic-row');
   if (row) { row.remove(); if (counterId) updateCount(counterId); }

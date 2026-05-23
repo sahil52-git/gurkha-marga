@@ -435,7 +435,7 @@ body {
     <!-- TOPBAR -->
     <div class="topbar">
         <div>
-            <div class="topbar-title">💳 Subscription</div>
+            <div class="topbar-title">Subscription</div>
             <div class="topbar-sub">Manage your premium access</div>
         </div>
         <div style="display:flex;gap:.5rem;align-items:center">
@@ -467,7 +467,7 @@ body {
     <!-- Active Subscription Card -->
     <?php if ($isPremium): ?>
     <div class="active-sub-card">
-        <div class="active-sub-icon">🏆</div>
+        <!-- <div class="active-sub-icon">🏆</div> -->
         <div style="flex:1">
             <div class="active-sub-name"><?= htmlspecialchars($sub['plan_name']) ?> — Active</div>
             <div class="active-sub-meta">

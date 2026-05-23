@@ -18,7 +18,7 @@ if (!empty($_SESSION['admin_logged_in'])) {
     header('Location: ../admin/admin_dashboard.php?page=dashboard'); exit();
 }
 if (!empty($_SESSION['staff_logged_in'])) {
-    header('Location: ../staff/staff_dashboard.php?page=home'); exit();
+    header('Location: ../staff/premium_client.php'); exit();
 }
 
 $error_message   = '';
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['staff_email']     = $staff['email'];
                         $_SESSION['staff_role']      = $staff['role'];
                         try { query("UPDATE admin_staff SET last_login = NOW() WHERE id = ?", [$staff['id']]); } catch(Exception $e){}
-                        header('Location: ../staff/staff_dashboard.php?page=home'); exit();
+                        header('Location: ../staff/premium_client.php'); exit();
                     }
                 }
             } catch (Exception $e) {

@@ -229,8 +229,89 @@ body {
     border-left-color: var(--accent);
 }
 .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-.nav-item.logout { color: #f87171; }
+/* Logout nav-item styled as button to avoid href */
+.nav-item.logout {
+    color: #f87171; cursor: pointer;
+    background: none; border: none; border-left: 2.5px solid transparent;
+    width: 100%; font-family: 'Poppins', sans-serif; font-size: .85rem;
+    text-align: left;
+}
 .nav-item.logout:hover { background: rgba(239, 68, 68, 0.08); border-left-color: #ef4444; }
+
+/* ── LOGOUT MODAL ── */
+.logout-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.logout-modal-overlay.open { display: flex; animation: lmoFadeIn .18s ease; }
+@keyframes lmoFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.logout-modal {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 2rem 2rem 1.75rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    animation: lmoSlideUp .22s cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes lmoSlideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.logout-modal-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1.1rem;
+}
+.logout-modal-icon svg {
+    width: 20px; height: 20px; fill: none;
+    stroke: #fca5a5; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.logout-modal h3 {
+    font-size: 1.05rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: .45rem;
+}
+.logout-modal p {
+    font-size: .82rem; color: var(--text-secondary);
+    line-height: 1.55; margin-bottom: 1.5rem;
+}
+.logout-modal-btns {
+    display: flex; gap: .65rem; justify-content: flex-end;
+}
+.logout-modal-btns .lmo-cancel {
+    padding: .55rem 1.15rem; border-radius: 9px;
+    font-size: .82rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary); cursor: pointer;
+    transition: all .15s;
+}
+.logout-modal-btns .lmo-cancel:hover {
+    background: rgba(255, 255, 255, 0.1); color: var(--text-primary);
+}
+.logout-modal-btns .lmo-confirm {
+    padding: .55rem 1.25rem; border-radius: 9px;
+    font-size: .82rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #fca5a5; cursor: pointer;
+    transition: all .15s; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+.logout-modal-btns .lmo-confirm:hover {
+    background: rgba(239, 68, 68, 0.22); color: #fecaca;
+    border-color: rgba(239, 68, 68, 0.5);
+}
 
 /* ── MAIN ── */
 .main-content { margin-left: 260px; padding: 1.75rem; min-height: 100vh; }
@@ -407,6 +488,28 @@ body {
 </head>
 <body>
 
+<!-- ── LOGOUT CONFIRMATION MODAL ── -->
+<div class="logout-modal-overlay" id="logoutModal">
+    <div class="logout-modal">
+        <div class="logout-modal-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+        </div>
+        <h3>Sign out</h3>
+        <p>Are you sure you want to log out of the staff portal?</p>
+        <div class="logout-modal-btns">
+            <button class="lmo-cancel" onclick="closeLogoutModal()">Cancel</button>
+            <a href="../auth/logout.php" class="lmo-confirm">
+                <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+                    <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                Log out
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -461,16 +564,15 @@ body {
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             Settings
         </a>
-        <!-- ★ NEW — Subscription link added below Settings -->
         <a href="subscription_fixed.php" class="nav-item">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             Subscription
         </a>
-        <!-- ★ END NEW -->
-        <a href="../auth/logout.php" class="nav-item logout">
+        <!-- Logout — triggers custom modal instead of direct href -->
+        <button class="nav-item logout" onclick="openLogoutModal()">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             Logout
-        </a>
+        </button>
     </nav>
 </aside>
 
@@ -771,37 +873,29 @@ function drawAvatarOnCanvas(canvas, state, size) {
     const acc  = state.accessories || [];
     const hStyle = state.hairStyle || 'short';
 
-    // BG
     const grad = ctx.createLinearGradient(0,0,size,size);
     grad.addColorStop(0, bg.grad[0]); grad.addColorStop(1, bg.grad[1]);
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(cx, cy, cx, 0, Math.PI*2); ctx.fill();
 
-    // Neck
     ctx.fillStyle = skin.color;
     ctx.beginPath(); ctx.roundRect(cx-14, cy+32, 28, 22, [4,4,0,0]); ctx.fill();
 
-    // Shoulders
     const shirt = ctx.createLinearGradient(cx-55, cy+50, cx+55, size);
     shirt.addColorStop(0,'#1e3a5f'); shirt.addColorStop(1,'#0f172a');
     ctx.fillStyle = shirt;
     ctx.beginPath(); ctx.ellipse(cx, cy+62, 58, 28, 0, 0, Math.PI*2); ctx.fill();
 
-    // Head
     ctx.fillStyle = skin.color;
     ctx.beginPath(); ctx.ellipse(cx, cy+2, 44, 52, 0, 0, Math.PI*2); ctx.fill();
-
-    // Ears
     ctx.beginPath(); ctx.ellipse(cx-44, cy+5, 8, 11, 0, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx+44, cy+5, 8, 11, 0, 0, Math.PI*2); ctx.fill();
 
-    // Eyebrows
     ctx.strokeStyle = hCol.color === '#F5F5F5' ? '#C0A080' : hCol.color;
     ctx.lineWidth = 3.5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(cx-28, cy-16); ctx.quadraticCurveTo(cx-16,cy-20,cx-7,cy-16); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx+7, cy-16);  ctx.quadraticCurveTo(cx+16,cy-20,cx+28,cy-16); ctx.stroke();
 
-    // Eyes
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.ellipse(cx-16,cy-4,11,9,0,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx+16,cy-4,11,9,0,0,Math.PI*2); ctx.fill();
@@ -815,19 +909,15 @@ function drawAvatarOnCanvas(canvas, state, size) {
     ctx.beginPath(); ctx.arc(cx-13,cy-7,2.2,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx+19,cy-7,2.2,0,Math.PI*2); ctx.fill();
 
-    // Nose
     ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(cx-3,cy+2); ctx.lineTo(cx,cy+12); ctx.lineTo(cx+3,cy+2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx-9,cy+14); ctx.quadraticCurveTo(cx,cy+17,cx+9,cy+14); ctx.stroke();
 
-    // Mouth
     ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(cx-14,cy+24); ctx.quadraticCurveTo(cx,cy+30,cx+14,cy+24); ctx.stroke();
 
-    // Hair
     ctx.fillStyle = hCol.color;
     if (hStyle === 'bald') {
-        // nothing
     } else if (hStyle === 'medium') {
         ctx.beginPath(); ctx.ellipse(cx,cy-40,46,24,0,Math.PI,0); ctx.fill();
         ctx.fillRect(cx-46,cy-44,92,22);
@@ -851,27 +941,24 @@ function drawAvatarOnCanvas(canvas, state, size) {
     } else if (hStyle === 'mohawk') {
         ctx.beginPath(); ctx.moveTo(cx-10,cy-40); ctx.lineTo(cx,cy-80); ctx.lineTo(cx+10,cy-40); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.roundRect(cx-10,cy-50,20,14,2); ctx.fill();
-    } else { // short (default)
+    } else {
         ctx.beginPath(); ctx.ellipse(cx,cy-38,44,22,0,Math.PI,0); ctx.fill();
         ctx.fillRect(cx-44,cy-40,88,20);
         ctx.beginPath(); ctx.ellipse(cx-42,cy-6,8,22,-0.15,-Math.PI/2,Math.PI/2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(cx+42,cy-6,8,22,0.15,-Math.PI/2,Math.PI/2,true); ctx.fill();
     }
 
-    // Beard
     if (acc.includes('beard')) {
         ctx.fillStyle = hCol.color;
         ctx.beginPath(); ctx.ellipse(cx,cy+36,30,18,0,0,Math.PI); ctx.fill();
         ctx.beginPath(); ctx.roundRect(cx-30,cy+18,60,20,4); ctx.fill();
     }
-    // Glasses
     if (acc.includes('glasses')) {
         ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2.5; ctx.fillStyle = 'rgba(147,197,253,0.2)';
         ctx.beginPath(); ctx.roundRect(cx-32,cy-14,24,18,5); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.roundRect(cx+8,cy-14,24,18,5); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx-8,cy-5); ctx.lineTo(cx+8,cy-5); ctx.stroke();
     }
-    // Sunglasses
     if (acc.includes('sunglasses')) {
         ctx.fillStyle = '#111827'; ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.roundRect(cx-34,cy-15,26,16,5); ctx.fill(); ctx.stroke();
@@ -879,7 +966,6 @@ function drawAvatarOnCanvas(canvas, state, size) {
         ctx.beginPath(); ctx.moveTo(cx-8,cy-7); ctx.lineTo(cx+8,cy-7); ctx.stroke();
     }
 
-    // Ring glow
     const ring = ctx.createLinearGradient(0,0,size,size);
     ring.addColorStop(0, bg.grad[0]+'88'); ring.addColorStop(1, bg.grad[1]+'88');
     ctx.strokeStyle = ring; ctx.lineWidth = size < 60 ? 2 : 4;
@@ -915,6 +1001,22 @@ function renderInitialSb(container) {
     container.appendChild(d);
 }
 
+// ── Logout modal ──
+function openLogoutModal() {
+    document.getElementById('logoutModal').classList.add('open');
+}
+function closeLogoutModal() {
+    document.getElementById('logoutModal').classList.remove('open');
+}
+// Close on backdrop click
+document.getElementById('logoutModal').addEventListener('click', function(e) {
+    if (e.target === this) closeLogoutModal();
+});
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLogoutModal();
+});
+
 // ── Chart data from PHP ──
 const WORKOUT_LABELS  = <?= json_encode($wLabels) ?>;
 const WORKOUT_DATA    = <?= json_encode($wData) ?>;
@@ -923,7 +1025,6 @@ const PROGRESS_WEIGHT = <?= json_encode(array_values($chartWeight)) ?>;
 const PROGRESS_PULLUPS= <?= json_encode(array_values($chartPullups)) ?>;
 const PROGRESS_RUN    = <?= json_encode(array_values($chartRun)) ?>;
 
-// ── Chart setup ──
 Chart.defaults.color        = '#64748b';
 Chart.defaults.borderColor  = 'rgba(255,255,255,0.05)';
 Chart.defaults.font.family  = "'Poppins', sans-serif";
@@ -940,72 +1041,37 @@ Chart.defaults.plugins.tooltip.bodyColor      = '#f8fafc';
 let chart = null;
 
 const chartConfigs = {
-    workouts: {
-        labels: WORKOUT_LABELS,
-        data:   WORKOUT_DATA,
-        label:  'Workouts',
-        color:  '#3b82f6',
-        type:   'bar',
-        fill:   false,
-    },
-    weight: {
-        labels: PROGRESS_LABELS,
-        data:   PROGRESS_WEIGHT,
-        label:  'Weight (kg)',
-        color:  '#fbbf24',
-        type:   'line',
-        fill:   true,
-    },
-    pullups: {
-        labels: PROGRESS_LABELS,
-        data:   PROGRESS_PULLUPS,
-        label:  'Pull-ups',
-        color:  '#6ee7b7',
-        type:   'line',
-        fill:   true,
-    },
+    workouts: { labels: WORKOUT_LABELS, data: WORKOUT_DATA, label: 'Workouts', color: '#3b82f6', type: 'bar', fill: false },
+    weight:   { labels: PROGRESS_LABELS, data: PROGRESS_WEIGHT, label: 'Weight (kg)', color: '#fbbf24', type: 'line', fill: true },
+    pullups:  { labels: PROGRESS_LABELS, data: PROGRESS_PULLUPS, label: 'Pull-ups', color: '#6ee7b7', type: 'line', fill: true },
 };
 
 function buildChart(key) {
     const cfg = chartConfigs[key];
     if (chart) chart.destroy();
-
     const ctx = document.getElementById('activityChart').getContext('2d');
     const isBar = cfg.type === 'bar';
-
     chart = new Chart(ctx, {
         type: cfg.type,
         data: {
             labels: cfg.labels,
             datasets: [{
-                label: cfg.label,
-                data:  cfg.data,
-                borderColor:     cfg.color,
+                label: cfg.label, data: cfg.data,
+                borderColor: cfg.color,
                 backgroundColor: isBar ? cfg.color + '55' : cfg.color + '18',
                 borderWidth: isBar ? 0 : 2,
                 borderRadius: isBar ? 4 : 0,
                 borderSkipped: false,
-                tension: 0.4,
-                fill: cfg.fill,
-                pointRadius: 3,
-                pointBackgroundColor: cfg.color,
-                hoverPointRadius: 5,
+                tension: 0.4, fill: cfg.fill,
+                pointRadius: 3, pointBackgroundColor: cfg.color, hoverPointRadius: 5,
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             interaction: { intersect: false, mode: 'index' },
             scales: {
-                x: {
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { maxTicksLimit: 8 },
-                },
-                y: {
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    beginAtZero: isBar,
-                    ticks: { precision: 0 },
-                },
+                x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxTicksLimit: 8 } },
+                y: { grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: isBar, ticks: { precision: 0 } },
             },
         },
     });
@@ -1017,7 +1083,6 @@ function switchChart(key, btn) {
     buildChart(key);
 }
 
-// ── BMI ring animation ──
 function animateBmiRing() {
     const circle = document.getElementById('bmiRingCircle');
     if (!circle) return;
@@ -1030,21 +1095,14 @@ function animateBmiRing() {
     });
 }
 
-// ── progress bar animation ──
 function animateBars() {
-    document.querySelectorAll('[data-w]').forEach(el => {
-        el.style.width = el.dataset.w + '%';
-    });
+    document.querySelectorAll('[data-w]').forEach(el => { el.style.width = el.dataset.w + '%'; });
 }
 
-// ── init ──
 document.addEventListener('DOMContentLoaded', () => {
     renderSidebarAvatar();
     buildChart('workouts');
-    setTimeout(() => {
-        animateBmiRing();
-        animateBars();
-    }, 300);
+    setTimeout(() => { animateBmiRing(); animateBars(); }, 300);
 });
 </script>
 

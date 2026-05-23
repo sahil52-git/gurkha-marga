@@ -260,13 +260,13 @@ $showCreate = ($action === 'create');
                 <label>Full Name <span style="color:#e05555">*</span></label>
                 <input type="text" name="full_name"
                        value="<?= htmlspecialchars($_POST['full_name'] ?? '') ?>"
-                       placeholder="e.g. John Smith" required>
+                       placeholder="Enter full name" required>
             </div>
             <div class="sf-field">
                 <label>Email Address <span style="color:#e05555">*</span></label>
                 <input type="email" name="email"
                        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                       placeholder="john@example.com" required>
+                       placeholder="Enter your email" required>
             </div>
         </div>
 
@@ -276,14 +276,13 @@ $showCreate = ($action === 'create');
                 <select name="role">
                     <option value="consultant"
                         <?= (($_POST['role'] ?? 'consultant') === 'consultant') ? 'selected' : '' ?>>
-                        🏋️ Fitness Consultant
+                         Consultant
                     </option>
                     <option value="dietitian"
                         <?= (($_POST['role'] ?? '') === 'dietitian') ? 'selected' : '' ?>>
-                        🥗 Registered Dietitian
+                         Dietitian
                     </option>
                 </select>
-                <span class="sf-hint">Admins are managed separately via Superadmin access.</span>
             </div>
             <div class="sf-field">
                 <label>Phone Number</label>
@@ -346,10 +345,10 @@ $showCreate = ($action === 'create');
 
                 // Role labels — keys match DB enum exactly
                 $roleLabels = [
-                    'superadmin' => '👑 Superadmin',
-                    'admin'      => '🛡️ Admin',
-                    'consultant' => '🏋️ Consultant',
-                    'dietitian'  => '🥗 Dietitian',
+                    'superadmin' => ' Superadmin',
+                    'admin'      => ' Admin',
+                    'consultant' => ' Consultant',
+                    'dietitian'  => ' Dietitian',
                 ];
 
                 // Active client count — wrapped in try/catch in case tables don't exist yet

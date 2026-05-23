@@ -37,14 +37,12 @@ $forceMap = [
 $forceFlag = $forceMap[$forceKey]['flag'] ?? strtoupper($forceKey);
 $forceName = $forceMap[$forceKey]['name'] ?? ucfirst($forceKey);
 
-// Count available questions for this user
 $totalQs = (int)(fetchOne(
     "SELECT COUNT(*) as c FROM questions
      WHERE is_active=1 AND (target_force=? OR target_force='all')",
     [$forceKey]
 )['c'] ?? 0);
 
-// Counts per category (for stats display)
 $catCounts = [];
 $CATEGORIES = ['math', 'english', 'general', 'past', 'physical'];
 foreach ($CATEGORIES as $cat) {
@@ -55,10 +53,8 @@ foreach ($CATEGORIES as $cat) {
     )['c'] ?? 0);
 }
 
-// Plans for paywall
 $plans = fetchAll("SELECT * FROM subscription_plans WHERE is_active=1 ORDER BY price");
 
-// Preview questions for free users
 $previewQs = [];
 if (!$isPremium) {
     $previewQs = fetchAll(
@@ -69,7 +65,6 @@ if (!$isPremium) {
     ) ?: [];
 }
 
-// Subscription bar
 $subPct = 0;
 if ($isPremium && !empty($sub['duration_days']) && $sub['duration_days'] > 0) {
     $subPct = min(100, (int)round($daysLeft / $sub['duration_days'] * 100));
@@ -328,24 +323,6 @@ body {
 .opt.wrong   .opt-letter { background: rgba(239,68,68,.2);  border-color: rgba(239,68,68,.5);  color: #fca5a5; }
 .opt-icon { margin-left: auto; font-size: .85rem; flex-shrink: 0; }
 
-/* text Q&A reveal */
-.text-reveal {
-    background: rgba(15,23,42,.6); border: 1px solid var(--border);
-    border-radius: 9px; overflow: hidden;
-}
-.text-reveal-btn {
-    width: 100%; padding: .75rem 1rem; text-align: left;
-    background: none; border: none; color: var(--t3); font-family: 'Poppins',sans-serif;
-    font-size: .78rem; font-weight: 600; cursor: pointer; transition: color .15s;
-    display: flex; align-items: center; justify-content: space-between;
-}
-.text-reveal-btn:hover { color: var(--t2); }
-.text-reveal-body {
-    display: none; padding: .75rem 1rem 1rem;
-    border-top: 1px solid var(--border); font-size: .83rem; line-height: 1.7; color: var(--t2);
-}
-.text-reveal-body.show { display: block; animation: fadeUp .2s ease; }
-
 /* ─── FEEDBACK ─── */
 .feedback {
     margin-top: .9rem; padding: .75rem 1rem; border-radius: 9px;
@@ -425,7 +402,114 @@ body {
 .cat-row-stat { font-size: .7rem; color: var(--t3); width: 58px; text-align: right; white-space: nowrap; }
 .empty-an { font-size: .77rem; color: var(--t3); text-align: center; padding: .75rem 0; }
 
-/* ─── Q&A ACCORDION ─── */
+/* ─── PAST PAPERS VIEW ─── */
+.past-section { margin-bottom: 1.75rem; }
+.past-section-title {
+    font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--t3); margin-bottom: .65rem;
+    display: flex; align-items: center; gap: .5rem;
+}
+.past-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Past Paper card */
+.pp-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; margin-bottom: .6rem;
+    transition: border-color .18s;
+}
+.pp-card:hover { border-color: var(--border-hi); }
+.pp-card-header {
+    display: flex; align-items: center; gap: .9rem;
+    padding: .9rem 1.1rem; cursor: pointer; user-select: none;
+}
+.pp-card-header:hover { background: rgba(255,255,255,.015); }
+.pp-num {
+    width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+    background: rgba(59,130,246,.1); display: flex; align-items: center; justify-content: center;
+    font-size: .65rem; font-weight: 700; color: #93c5fd;
+}
+.pp-title { flex: 1; font-size: .87rem; font-weight: 500; line-height: 1.4; color: var(--t1); }
+.pp-badges { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+.pp-type-badge {
+    font-size: .58rem; font-weight: 700; padding: .15rem .45rem; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: .04em;
+}
+.pp-type-pdf  { background: rgba(239,68,68,.1);   border: 1px solid rgba(239,68,68,.25);   color: #fca5a5; }
+.pp-type-doc  { background: rgba(59,130,246,.1);  border: 1px solid rgba(59,130,246,.25);  color: #93c5fd; }
+.pp-type-img  { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2);   color: #6ee7b7; }
+.pp-type-vid  { background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2);   color: var(--gold); }
+.pp-type-text { background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2);   color: #c4b5fd; }
+.pp-chevron {
+    width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.04);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: .55rem; color: var(--t3); transition: transform .22s, color .18s; flex-shrink: 0;
+}
+.pp-card.open .pp-chevron { transform: rotate(180deg); color: var(--accent); }
+.pp-card-body {
+    display: none; padding: 1rem 1.1rem 1.1rem;
+    border-top: 1px solid var(--border); background: rgba(15,23,42,.4);
+}
+.pp-card.open .pp-card-body { display: block; }
+
+/* PDF Embed */
+.pdf-embed-wrap {
+    border-radius: 8px; overflow: hidden; border: 1px solid var(--border);
+    margin-bottom: .75rem; background: #1a1a2e;
+}
+.pdf-embed-wrap iframe {
+    width: 100%; height: 520px; border: none; display: block;
+}
+.pdf-fallback {
+    padding: 1.5rem; text-align: center;
+    font-size: .8rem; color: var(--t3); line-height: 1.65;
+}
+.pdf-fallback .pdf-icon { font-size: 2rem; margin-bottom: .5rem; }
+.pdf-fallback a {
+    color: var(--accent); text-decoration: none; font-weight: 600;
+}
+.pdf-fallback a:hover { text-decoration: underline; }
+
+/* Image preview */
+.img-preview {
+    max-width: 100%; border-radius: 8px; border: 1px solid var(--border);
+    margin-bottom: .75rem; display: block;
+}
+
+/* Answer/Explanation text */
+.pp-answer-text {
+    font-size: .82rem; line-height: 1.7; color: var(--t2); margin-bottom: .75rem;
+}
+.pp-answer-text p { margin-bottom: .5rem; }
+
+/* Download / Open button */
+.pp-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.pp-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: .38rem .85rem; border-radius: 7px; font-family: 'Poppins',sans-serif;
+    font-size: .72rem; font-weight: 600; text-decoration: none; transition: all .18s;
+    border: 1px solid rgba(59,130,246,.3); background: rgba(59,130,246,.08); color: #93c5fd;
+}
+.pp-btn:hover { background: rgba(59,130,246,.16); }
+.pp-btn.dl { border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.08); color: #6ee7b7; }
+.pp-btn.dl:hover { background: rgba(16,185,129,.16); }
+
+/* MCQ inside past papers */
+.mcq-opts-list { display: flex; flex-direction: column; gap: .3rem; margin: .5rem 0 .75rem; }
+.mcq-opt-item {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .5rem .75rem; border-radius: 7px;
+    font-size: .8rem; color: var(--t2);
+    background: rgba(15,23,42,.5); border: 1px solid var(--border);
+}
+.mcq-opt-item.is-correct { border-color: rgba(16,185,129,.35); color: #6ee7b7; background: rgba(16,185,129,.06); }
+.mcq-opt-letter {
+    width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0; font-size: .62rem; font-weight: 800;
+    background: rgba(255,255,255,.04); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; color: var(--t3);
+}
+.mcq-opt-item.is-correct .mcq-opt-letter { background: rgba(16,185,129,.15); border-color: rgba(16,185,129,.4); color: #6ee7b7; }
+
+/* ─── Q&A ACCORDION (legacy, now used as sub-section inside past papers) ─── */
 .q-list { display: flex; flex-direction: column; gap: .45rem; margin-bottom: 1.25rem; }
 .q-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -532,6 +616,7 @@ body {
     .stat-grid { grid-template-columns: 1fr 1fr; }
     .cat-strip { grid-template-columns: repeat(3, 1fr); }
     .plans-grid { grid-template-columns: 1fr 1fr; }
+    .pdf-embed-wrap iframe { height: 340px; }
 }
 </style>
 </head>
@@ -652,16 +737,15 @@ body {
             <?php endforeach; ?>
         </div>
 
-        <!-- View tabs -->
+        <!-- View tabs — renamed -->
         <div class="view-tabs fade d2">
-            <button class="view-tab active" id="tabQuiz" onclick="switchView('quiz')">Quiz Practice</button>
-            <button class="view-tab" id="tabQA"   onclick="switchView('qa')">Q&amp;A Library</button>
+            <button class="view-tab active" id="tabQuiz" onclick="switchView('quiz')">MCQs</button>
+            <button class="view-tab" id="tabQA"   onclick="switchView('qa')">Past Papers</button>
         </div>
 
-        <!-- ── QUIZ VIEW ── -->
+        <!-- ── MCQ QUIZ VIEW ── -->
         <div id="viewQuiz">
             <div class="quiz-arena fade d3" id="quizArena">
-                <!-- topbar -->
                 <div class="quiz-topbar">
                     <span class="cat-tag" id="catTag">Math</span>
                     <div class="quiz-prog-wrap">
@@ -674,7 +758,6 @@ body {
                     </div>
                 </div>
 
-                <!-- loading -->
                 <div class="quiz-body" id="quizLoading">
                     <div class="state-box">
                         <div class="spinner"></div>
@@ -682,7 +765,6 @@ body {
                     </div>
                 </div>
 
-                <!-- question -->
                 <div class="quiz-body" id="quizBody" style="display:none">
                     <div class="q-label">
                         <div class="q-num-box" id="qNumBox">1</div>
@@ -695,7 +777,6 @@ body {
                     <div class="feedback" id="feedback"></div>
                 </div>
 
-                <!-- end screen -->
                 <div class="quiz-end" id="quizEnd">
                     <div class="end-score" id="endRing">—</div>
                     <div class="end-grade" id="endGrade">Quiz Complete</div>
@@ -706,7 +787,6 @@ body {
                     </div>
                 </div>
 
-                <!-- footer -->
                 <div class="quiz-footer" id="quizFooter">
                     <div class="quiz-hint" id="qHint">Select an answer to continue</div>
                     <button class="btn-next" id="btnNext" disabled onclick="nextQ()">
@@ -733,11 +813,11 @@ body {
             </div>
         </div><!-- /viewQuiz -->
 
-        <!-- ── Q&A LIBRARY VIEW ── -->
+        <!-- ── PAST PAPERS VIEW ── -->
         <div id="viewQA" style="display:none">
             <div class="state-box fade d2" id="qaLoading">
                 <div class="spinner"></div>
-                Loading library...
+                Loading past papers...
             </div>
             <div id="qaContent"></div>
         </div>
@@ -768,7 +848,7 @@ body {
             </div>
             <div class="paywall-title">Subscribe to Access Questions</div>
             <div class="paywall-desc">
-                Hundreds of MCQs and text Q&As across Math, English, General Knowledge, Past Papers, and Physical Tests — with instant feedback and a personal analytics dashboard tailored to <?= htmlspecialchars($forceName) ?>.
+                Hundreds of MCQs and past papers across Math, English, General Knowledge, Past Papers, and Physical Tests — with instant feedback and a personal analytics dashboard tailored to <?= htmlspecialchars($forceName) ?>.
             </div>
             <?php if (!empty($plans)): ?>
             <div class="plans-grid">
@@ -798,7 +878,7 @@ body {
 <button class="mobile-fab" onclick="document.getElementById('sidebar').classList.toggle('active')">&#9776;</button>
 
 <script>
-const IS_PREMIUM      = <?= json_encode($isPremium) ?>;
+const IS_PREMIUM        = <?= json_encode($isPremium) ?>;
 const SAVED_AVATAR_TYPE = <?= json_encode($avatarType) ?>;
 const SAVED_PHOTO_URL   = <?= json_encode($photoUrl) ?>;
 const SAVED_AVATAR_CFG  = <?= $avatarConfigJson ?>;
@@ -807,7 +887,7 @@ const CATS              = ['math','english','general','past','physical'];
 const CAT_LABELS        = { math:'Math', english:'English', general:'General Knowledge', past:'Past Papers', physical:'Physical' };
 const FILE_BASE         = '/gurkha-marga/frontend/uploads/question_files/';
 
-// ── Avatar (unchanged from original) ─────────────────────────────────────────
+// ── Avatar ───────────────────────────────────────────────────────────────────
 const AV_OPTIONS = {
     bg:[
         {id:'grad1',grad:['#1e3a5f','#2563eb']},{id:'grad2',grad:['#14532d','#16a34a']},
@@ -953,15 +1033,13 @@ function renderInitialSb(c) {
 // ════════════════════════════════════════════════════════
 if (IS_PREMIUM) {
 
-// ── State ────────────────────────────────────────────────
-let currentCat  = 'math';
-let questionBank = {};   // { math: [...], english: [...], ... }
-let qIdx        = 0;
-let answered    = false;
-const stats     = {};
+let currentCat   = 'math';
+let questionBank = {};
+let qIdx         = 0;
+let answered     = false;
+const stats      = {};
 CATS.forEach(c => { stats[c] = { correct:0, wrong:0, streak:0, best:0, answered:0 }; });
 
-// ── Fetch questions for a category ───────────────────────
 async function fetchCat(cat) {
     if (questionBank[cat]) return questionBank[cat];
     try {
@@ -975,31 +1053,46 @@ async function fetchCat(cat) {
     }
 }
 
-// ── Select category ──────────────────────────────────────
 async function selectCat(cat) {
     currentCat = cat;
     qIdx       = 0;
     answered   = false;
 
-    // update pill UI
     document.querySelectorAll('.cat-pill').forEach(p => {
         p.classList.toggle('active', p.dataset.cat === cat);
     });
     document.getElementById('catTag').textContent = CAT_LABELS[cat] || cat;
 
-    // reset quiz end
     document.getElementById('quizEnd').classList.remove('show');
-    document.getElementById('quizBody').style.display   = 'none';
-    document.getElementById('quizFooter').style.display = '';
+    document.getElementById('quizBody').style.display    = 'none';
+    document.getElementById('quizFooter').style.display  = '';
     document.getElementById('quizLoading').style.display = '';
 
     const qs = await fetchCat(cat);
-
     document.getElementById('quizLoading').style.display = 'none';
 
     if (!qs.length) {
         document.getElementById('quizBody').style.display = '';
-        document.getElementById('qText').textContent      = 'No questions available for this category yet.';
+        document.getElementById('qText').textContent      = 'No MCQ questions available for this category yet.';
+        document.getElementById('optGrid').innerHTML      = '';
+        document.getElementById('qFileWrap').innerHTML    = '';
+        document.getElementById('textRevealWrap').innerHTML = '';
+        document.getElementById('feedback').className     = 'feedback';
+        document.getElementById('btnNext').disabled       = true;
+        document.getElementById('qHint').textContent      = '';
+        document.getElementById('qNum').textContent       = '—';
+        document.getElementById('qTot').textContent       = '—';
+        document.getElementById('qProgFill').style.width  = '0%';
+        return;
+    }
+
+    // Filter to only MCQ for the quiz view
+    const mcqOnly = qs.filter(q => q.type === 'mcq');
+    questionBank[cat + '_mcq'] = mcqOnly;
+
+    if (!mcqOnly.length) {
+        document.getElementById('quizBody').style.display = '';
+        document.getElementById('qText').textContent      = 'No MCQ questions in this category. Check Past Papers for study material.';
         document.getElementById('optGrid').innerHTML      = '';
         document.getElementById('qFileWrap').innerHTML    = '';
         document.getElementById('textRevealWrap').innerHTML = '';
@@ -1015,9 +1108,8 @@ async function selectCat(cat) {
     showQuestion();
 }
 
-// ── Render a question ─────────────────────────────────────
 function showQuestion() {
-    const qs    = questionBank[currentCat];
+    const qs    = questionBank[currentCat + '_mcq'] || questionBank[currentCat] || [];
     const q     = qs[qIdx];
     const total = qs.length;
     answered    = false;
@@ -1030,7 +1122,6 @@ function showQuestion() {
     document.getElementById('btnNext').disabled      = true;
     document.getElementById('qHint').textContent     = 'Select an answer to continue';
 
-    // file attachment
     const fw = document.getElementById('qFileWrap');
     if (q.file) {
         const ext = q.file.split('.').pop().toUpperCase();
@@ -1040,16 +1131,14 @@ function showQuestion() {
         </a>`;
     } else { fw.innerHTML = ''; }
 
-    // clear feedback
     const fb = document.getElementById('feedback');
     fb.className = 'feedback'; fb.innerHTML = '';
     document.getElementById('textRevealWrap').innerHTML = '';
 
-    // render MCQ or text
     const grid = document.getElementById('optGrid');
     grid.innerHTML = '';
 
-    if (q.type === 'mcq' && q.opts && q.opts.length) {
+    if (q.opts && q.opts.length) {
         ['A','B','C','D'].forEach((letter, i) => {
             if (q.opts[i] === undefined || q.opts[i] === null || q.opts[i] === '') return;
             const btn = document.createElement('button');
@@ -1058,37 +1147,19 @@ function showQuestion() {
             btn.onclick = () => pickAnswer(i);
             grid.appendChild(btn);
         });
-    } else if (q.type === 'text') {
-        // Text Q&A: show reveal button instead of options
-        document.getElementById('textRevealWrap').innerHTML = `
-            <div class="text-reveal">
-                <button class="text-reveal-btn" onclick="toggleReveal(this)">
-                    <span>Show Answer</span>
-                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-                <div class="text-reveal-body">${q.exp ? escHtml(q.exp).replace(/\n/g,'<br>') : '<em style="color:var(--t3)">No answer provided yet.</em>'}</div>
-            </div>`;
-        // For text Q&A, auto-enable next
-        document.getElementById('btnNext').disabled = false;
-        document.getElementById('qHint').textContent = 'Read the answer and continue';
     }
 
     document.getElementById('quizBody').style.display = '';
     updateLiveScore();
 }
 
-function toggleReveal(btn) {
-    const body = btn.parentElement.querySelector('.text-reveal-body');
-    const isOpen = body.classList.toggle('show');
-    btn.querySelector('span').textContent = isOpen ? 'Hide Answer' : 'Show Answer';
-}
-
 function pickAnswer(chosen) {
     if (answered) return;
-    answered    = true;
-    const q     = questionBank[currentCat][qIdx];
-    const st    = stats[currentCat];
-    const btns  = document.querySelectorAll('.opt');
+    answered = true;
+    const qs = questionBank[currentCat + '_mcq'] || questionBank[currentCat] || [];
+    const q  = qs[qIdx];
+    const st = stats[currentCat];
+    const btns = document.querySelectorAll('.opt');
 
     btns.forEach((b, i) => {
         b.disabled = true;
@@ -1122,7 +1193,7 @@ function pickAnswer(chosen) {
 
 function nextQ() {
     qIdx++;
-    const qs = questionBank[currentCat];
+    const qs = questionBank[currentCat + '_mcq'] || questionBank[currentCat] || [];
     if (!qs || qIdx >= qs.length) { showEnd(); return; }
     showQuestion();
 }
@@ -1149,7 +1220,7 @@ function showEnd() {
 function restartQuiz() {
     const st = stats[currentCat];
     st.correct = 0; st.wrong = 0; st.streak = 0; st.best = 0; st.answered = 0;
-    qIdx       = 0;
+    qIdx = 0;
     document.getElementById('quizEnd').classList.remove('show');
     document.getElementById('quizBody').style.display   = '';
     document.getElementById('quizFooter').style.display = '';
@@ -1180,13 +1251,13 @@ function updateAnalytics() {
     document.getElementById('aStr').textContent = bs;
     if (tot) document.getElementById('anMeta').textContent = `${tot} answered · ${tc} correct`;
 
-    const answered = CATS.filter(c => stats[c].answered > 0);
-    const rows     = document.getElementById('catRows');
-    if (!answered.length) {
+    const answeredCats = CATS.filter(c => stats[c].answered > 0);
+    const rows = document.getElementById('catRows');
+    if (!answeredCats.length) {
         rows.innerHTML = '<div class="empty-an">No answers yet.</div>';
         return;
     }
-    rows.innerHTML = answered.map(cat => {
+    rows.innerHTML = answeredCats.map(cat => {
         const s   = stats[cat];
         const tot = s.correct + s.wrong;
         const p   = tot ? Math.round(s.correct / tot * 100) : 0;
@@ -1206,18 +1277,121 @@ function switchView(v) {
     document.getElementById('tabQuiz').classList.toggle('active', v === 'quiz');
     document.getElementById('tabQA').classList.toggle('active',   v === 'qa');
     if (v === 'qa' && !document.getElementById('qaContent').children.length) {
-        loadQALibrary();
+        loadPastPapers();
     }
 }
 
-// ── Q&A Library (loads all questions grouped by category) ─
-async function loadQALibrary() {
+// ── File type helpers ─────────────────────────────────────
+function getFileExt(filename) {
+    return filename ? filename.split('.').pop().toLowerCase() : '';
+}
+
+function getFileBadgeClass(ext) {
+    if (['pdf'].includes(ext)) return 'pp-type-pdf';
+    if (['doc','docx'].includes(ext)) return 'pp-type-doc';
+    if (['png','jpg','jpeg','gif','webp'].includes(ext)) return 'pp-type-img';
+    if (['mp4','webm','mov'].includes(ext)) return 'pp-type-vid';
+    return 'pp-type-text';
+}
+
+function getFileBadgeLabel(ext) {
+    if (!ext) return 'TEXT';
+    return ext.toUpperCase();
+}
+
+// Build the body HTML for a past-paper card
+function buildPPBody(q) {
+    let html = '';
+
+    // ── File viewer ──
+    if (q.file) {
+        const ext  = getFileExt(q.file);
+        const url  = FILE_BASE + q.file;
+        const isPdf = ext === 'pdf';
+        const isImg = ['png','jpg','jpeg','gif','webp'].includes(ext);
+        const isVid = ['mp4','webm'].includes(ext);
+        const isDoc = ['doc','docx'].includes(ext);
+
+        if (isPdf) {
+            html += `
+            <div class="pdf-embed-wrap">
+                <iframe
+                    src="${url}#toolbar=1&navpanes=1&scrollbar=1"
+                    title="PDF Viewer"
+                    loading="lazy"
+                    onerror="this.parentElement.innerHTML='<div class=pdf-fallback><div class=pdf-icon>📄</div><p>Unable to display PDF inline.</p><a href=${url} target=_blank>Open PDF in new tab →</a></div>'">
+                </iframe>
+            </div>
+            <div class="pp-actions">
+                <a href="${url}" target="_blank" class="pp-btn">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    Open in new tab
+                </a>
+                <a href="${url}" download class="pp-btn dl">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download PDF
+                </a>
+            </div>`;
+        } else if (isImg) {
+            html += `<img src="${url}" alt="Attachment" class="img-preview" loading="lazy">
+            <div class="pp-actions">
+                <a href="${url}" target="_blank" class="pp-btn">View full size</a>
+                <a href="${url}" download class="pp-btn dl">Download</a>
+            </div>`;
+        } else if (isVid) {
+            html += `<video controls style="width:100%;border-radius:8px;border:1px solid var(--border);margin-bottom:.75rem">
+                <source src="${url}">
+                <p style="font-size:.78rem;color:var(--t3)">Your browser doesn't support video. <a href="${url}" target="_blank" style="color:var(--accent)">Download it</a>.</p>
+            </video>`;
+        } else if (isDoc) {
+            html += `
+            <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:1rem;margin-bottom:.75rem;text-align:center">
+                <div style="font-size:1.5rem;margin-bottom:.5rem">📝</div>
+                <div style="font-size:.8rem;color:var(--t2);margin-bottom:.75rem">Word document attached</div>
+                <div class="pp-actions" style="justify-content:center">
+                    <a href="${url}" target="_blank" class="pp-btn">Open document</a>
+                    <a href="${url}" download class="pp-btn dl">Download</a>
+                </div>
+            </div>`;
+        } else {
+            html += `<div class="pp-actions" style="margin-bottom:.75rem">
+                <a href="${url}" target="_blank" class="pp-btn">Open attachment</a>
+                <a href="${url}" download class="pp-btn dl">Download</a>
+            </div>`;
+        }
+    }
+
+    // ── MCQ options ──
+    if (q.type === 'mcq' && q.opts && q.opts.length) {
+        const letters = ['A','B','C','D'];
+        html += '<div class="mcq-opts-list">' +
+            q.opts.map((o, i) =>
+                `<div class="mcq-opt-item ${i===q.ans?'is-correct':''}">
+                    <span class="mcq-opt-letter">${letters[i]}</span>
+                    <span>${escHtml(String(o))}</span>
+                    ${i===q.ans ? '<span style="margin-left:auto;font-size:.7rem;font-weight:700">✓ Correct</span>' : ''}
+                </div>`
+            ).join('') +
+        '</div>';
+    }
+
+    // ── Explanation / Answer text ──
+    if (q.exp) {
+        html += `<div class="pp-answer-text">${escHtml(q.exp).replace(/\n/g,'<br>')}</div>`;
+    } else if (!q.file) {
+        html += `<div class="pp-answer-text" style="color:var(--t3);font-style:italic">Answer will be available soon.</div>`;
+    }
+
+    return html;
+}
+
+// ── Load Past Papers view (all questions) ─────────────────
+async function loadPastPapers() {
     const loading = document.getElementById('qaLoading');
     const content = document.getElementById('qaContent');
     loading.style.display = '';
     content.innerHTML     = '';
 
-    // fetch all categories
     const all = {};
     for (const cat of CATS) {
         const qs = await fetchCat(cat);
@@ -1228,65 +1402,52 @@ async function loadQALibrary() {
 
     const catKeys = Object.keys(all);
     if (!catKeys.length) {
-        content.innerHTML = '<div class="state-box"><div class="state-title">No questions available yet.</div></div>';
+        content.innerHTML = '<div class="state-box"><div class="state-title">No content available yet.</div></div>';
         return;
     }
 
     let num = 0;
     catKeys.forEach(cat => {
-        const label = document.createElement('div');
-        label.className = 'cat-group-label';
-        label.textContent = CAT_LABELS[cat] || cat;
-        content.appendChild(label);
+        const section = document.createElement('div');
+        section.className = 'past-section';
 
-        const list = document.createElement('div');
-        list.className = 'q-list';
+        const titleEl = document.createElement('div');
+        titleEl.className   = 'past-section-title';
+        titleEl.textContent = CAT_LABELS[cat] || cat;
+        section.appendChild(titleEl);
 
         all[cat].forEach(q => {
             num++;
-            const card  = document.createElement('div');
-            card.className = 'q-card';
-            card.id        = 'qc-' + q.id;
+            const ext = getFileExt(q.file);
+            const badgeClass = q.file ? getFileBadgeClass(ext) : 'pp-type-text';
+            const badgeLabel = q.file ? getFileBadgeLabel(ext) : (q.type === 'mcq' ? 'MCQ' : 'TEXT');
 
-            const typeBadge = q.type === 'mcq'
-                ? '<span class="type-badge">MCQ</span>'
-                : '<span class="type-badge tb-text">Text</span>';
-
-            let bodyHtml = '';
-            if (q.type === 'mcq' && q.opts && q.opts.length) {
-                const letters = ['A','B','C','D'];
-                bodyHtml = '<div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.6rem">' +
-                    q.opts.map((o, i) =>
-                        `<div style="font-size:.8rem;color:${i===q.ans?'#6ee7b7':'var(--t3)'};font-weight:${i===q.ans?'600':'400'}">
-                            ${letters[i]}. ${escHtml(String(o))}${i===q.ans?' (correct)':''}
-                        </div>`
-                    ).join('') + '</div>';
-            }
-            if (q.exp) {
-                bodyHtml += `<div style="font-size:.8rem;color:var(--t2);border-top:1px solid var(--border);padding-top:.6rem;margin-top:.3rem">${escHtml(q.exp).replace(/\n/g,'<br>')}</div>`;
-            }
-            if (!bodyHtml) {
-                bodyHtml = '<span style="color:var(--t3);font-style:italic;font-size:.8rem">Answer will be available soon.</span>';
-            }
+            const card = document.createElement('div');
+            card.className = 'pp-card';
+            card.id = 'pp-' + q.id;
 
             card.innerHTML = `
-                <div class="q-header" onclick="toggleQCard(${q.id})">
-                    <div class="q-num">${num}</div>
-                    <div class="q-text2">${escHtml(q.q)}</div>
-                    ${typeBadge}
-                    <div class="q-chevron">&#9660;</div>
+                <div class="pp-card-header" onclick="togglePPCard(${q.id})">
+                    <div class="pp-num">${num}</div>
+                    <div class="pp-title">${escHtml(q.q)}</div>
+                    <div class="pp-badges">
+                        <span class="pp-type-badge ${badgeClass}">${escHtml(badgeLabel)}</span>
+                    </div>
+                    <div class="pp-chevron">&#9660;</div>
                 </div>
-                <div class="q-body2">${bodyHtml}</div>`;
-            list.appendChild(card);
+                <div class="pp-card-body">${buildPPBody(q)}</div>`;
+
+            section.appendChild(card);
         });
-        content.appendChild(list);
+
+        content.appendChild(section);
     });
 }
 
-function toggleQCard(id) {
-    const card = document.getElementById('qc-' + id); if (!card) return;
+function togglePPCard(id) {
+    const card = document.getElementById('pp-' + id); if (!card) return;
     const wasOpen = card.classList.contains('open');
-    document.querySelectorAll('.q-card.open').forEach(c => c.classList.remove('open'));
+    document.querySelectorAll('.pp-card.open').forEach(c => c.classList.remove('open'));
     if (!wasOpen) card.classList.add('open');
 }
 

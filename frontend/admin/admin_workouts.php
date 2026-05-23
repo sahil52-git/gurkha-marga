@@ -437,12 +437,6 @@ $defaultTips    = [['icon'=>'💡','text'=>''],['icon'=>'⚡','text'=>'']];
   <div class="stat-card"><div class="stat-label">With Steps</div><div class="stat-val"><?= $wStats['has_steps'] ?? 0 ?></div><div class="stat-sub">Full instructions</div></div>
 </div>
 
-<!-- Info -->
-<div style="background:var(--accent-dim);border:1px solid var(--accent-hi);border-radius:var(--r);padding:.8rem 1rem;margin-bottom:1.1rem;font-size:.8rem;color:#93c5fd;display:flex;align-items:center;gap:.65rem">
-  <span>ℹ</span>
-  <span>GLB files → <code style="font-family:var(--mono);background:rgba(59,130,246,.15);padding:.1em .3em;border-radius:3px">models/</code> folder. Thumbnail images are shown on the user exercise cards. Published exercises appear on the user workout page.</span>
-</div>
-
 <!-- Filters -->
 <div class="filter-bar">
   <form method="GET" style="display:contents">

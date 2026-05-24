@@ -96,7 +96,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $step = 1;
             } else {
                 try {
-                    // ── 1. Insert user ────────────────────────────────────────────
                     query(
                         "INSERT INTO users
                             (full_name, email, password, age, gender, height, weight,
@@ -111,14 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]
                     );
 
-                    // ── 2. Get the new user's ID ──────────────────────────────────
                     $newUser = query(
                         "SELECT id FROM users WHERE email = ? LIMIT 1",
                         [$step1['email']]
                     )->fetch();
                     $newUserId = $newUser ? (int)$newUser['id'] : null;
 
-                    // ── 3. Create motivation record (email_daily = 1 by default) ─
                     if ($newUserId) {
                         query(
                             "INSERT INTO user_motivation
@@ -128,7 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
                     }
 
-                    // ── 4. Resolve force display name ─────────────────────────────
                     $forceNames = [
                         'british'   => 'British Army',
                         'nepal'     => 'Nepal Army',
@@ -138,12 +134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ];
                     $forceName = $forceNames[$target_force] ?? 'British Army';
 
-                    // ── 5. Send welcome email ─────────────────────────────────────
                     if (!Email::sendWelcomeEmail($step1['full_name'], $step1['email'])) {
                         error_log("Welcome email failed for " . $step1['email']);
                     }
 
-                    // ── 6. Send Day 1 motivation email ────────────────────────────
                     if (!Email::sendSignupMotivationEmail($step1['full_name'], $step1['email'], $forceName)) {
                         error_log("Day 1 motivation email failed for " . $step1['email']);
                     }
@@ -181,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --error:          #ef4444;
             --text-primary:   #f8fafc;
             --text-secondary: #cbd5e1;
+            --text-muted:     #64748b;
         }
 
         body {
@@ -267,8 +262,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-select:focus { outline:none; border-color:var(--accent); }
         .form-input::placeholder { color:var(--text-secondary); }
 
+        /* Password field with eye toggle */
+        .input-wrap { position: relative; }
+        .form-input.has-right-btn { padding-right: 3rem; }
+
+        /* Instagram-style eye toggle */
+        .btn-eye {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer;
+            color: var(--text-muted);
+            padding: 4px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color .2s;
+            line-height: 0;
+        }
+        .btn-eye:hover { color: var(--text-primary); }
+        .btn-eye svg { width: 20px; height: 20px; pointer-events: none; }
+        .btn-eye .icon-eye-off { display: none; }
+        .btn-eye.revealed .icon-eye     { display: none; }
+        .btn-eye.revealed .icon-eye-off { display: block; }
+
         .form-row   { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-        .input-wrap { position:relative; }
         .input-unit {
             position:absolute; right:16px; top:50%; transform:translateY(-50%);
             color:var(--text-secondary); pointer-events:none;
@@ -377,14 +391,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="form-group">
                 <label class="form-label" for="password">Password <span class="required">*</span></label>
-                <input type="password" id="password" name="password" class="form-input"
-                    placeholder="Minimum 8 characters" autocomplete="new-password" required minlength="8">
+                <div class="input-wrap">
+                    <input type="password" id="password" name="password" class="form-input has-right-btn"
+                        placeholder="Minimum 8 characters" autocomplete="new-password" required minlength="8">
+                    <button type="button" class="btn-eye" id="togglePwBtn" onclick="togglePw('password','togglePwBtn')" aria-label="Show password">
+                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="confirm_password">Confirm Password <span class="required">*</span></label>
-                <input type="password" id="confirm_password" name="confirm_password" class="form-input"
-                    placeholder="Re-enter your password" autocomplete="new-password" required>
+                <div class="input-wrap">
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-input has-right-btn"
+                        placeholder="Re-enter your password" autocomplete="new-password" required>
+                    <button type="button" class="btn-eye" id="toggleConfirmBtn" onclick="togglePw('confirm_password','toggleConfirmBtn')" aria-label="Show password">
+                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <button type="submit" name="step1" class="btn btn-primary">Continue →</button>
@@ -488,5 +528,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
 </div>
+
+<script>
+function togglePw(inputId, btnId) {
+    const input = document.getElementById(inputId);
+    const btn   = document.getElementById(btnId);
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.classList.toggle('revealed', isHidden);
+    btn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+}
+</script>
+
 </body>
 </html>

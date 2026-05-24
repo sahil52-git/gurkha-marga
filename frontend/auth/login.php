@@ -70,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $matched = true;
 
                     if (in_array($staff['role'], ['superadmin', 'admin'])) {
-                        // Admin-role staff → admin panel
                         session_regenerate_id(true);
                         $_SESSION['admin_logged_in'] = true;
                         $_SESSION['admin_id']        = $staff['id'];
@@ -81,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         header('Location: ../admin/admin_dashboard.php?page=dashboard'); exit();
 
                     } else {
-                        // dietitian / consultant → staff portal
                         session_regenerate_id(true);
                         $_SESSION['staff_logged_in'] = true;
                         $_SESSION['staff_id']        = $staff['id'];
@@ -211,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* ── Card ── */
         .card-wrap {
             position: relative; z-index: 10;
-            width: 100%; max-width: 460px;
+            width: 100%; max-width: 420px;
         }
         .card-wrap::before {
             content: '';
@@ -229,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             backdrop-filter: blur(28px) saturate(1.5);
             border: 1px solid var(--border-hover);
             border-radius: 24px;
-            padding: 2.75rem 2.5rem;
+            padding: 2.5rem 2.25rem;
             animation: cardIn .55s cubic-bezier(.34,1.3,.64,1) both;
         }
         @keyframes cardIn {
@@ -239,38 +237,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* ── Brand ── */
         .brand-row { display: flex; align-items: center; justify-content: center; gap: 13px; margin-bottom: .35rem; }
-        .brand-icon {
-            width: 46px; height: 46px;
-            background: linear-gradient(135deg, rgba(251,191,36,.2), rgba(251,191,36,.06));
-            border: 1px solid rgba(251,191,36,.35);
-            border-radius: 13px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.45rem; flex-shrink: 0;
-            box-shadow: 0 0 18px rgba(251,191,36,.18);
-        }
         .brand-name {
             font-size: 1.65rem; font-weight: 800; letter-spacing: -.02em;
             background: linear-gradient(135deg, var(--gold) 0%, #f59e0b 60%, #fde68a 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-        .brand-tagline { text-align: center; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2rem; }
-
-        /* ── Role pills ── */
-        .role-strip { display: flex; gap: .5rem; justify-content: center; margin-bottom: 1.75rem; flex-wrap: wrap; }
-        .role-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: .28rem .75rem; border-radius: 20px;
-            font-size: .72rem; font-weight: 600; letter-spacing: .04em; border: 1px solid;
-            opacity: .75; transition: opacity .2s, transform .2s;
-        }
-        .role-pill:hover { opacity: 1; transform: translateY(-1px); }
-        .pill-user  { background: rgba(59,130,246,.12);  border-color: rgba(59,130,246,.3);  color: #93c5fd; }
-        .pill-staff { background: rgba(6,182,212,.1);    border-color: rgba(6,182,212,.3);   color: #67e8f9; }
-        .pill-admin { background: rgba(251,191,36,.1);   border-color: rgba(251,191,36,.3);  color: var(--gold); }
 
         /* ── Heading ── */
         .form-heading { text-align: center; margin-bottom: 1.6rem; }
-        .form-heading h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: .3rem; }
+        .form-heading h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: .3rem; }
         .form-heading p  { font-size: .875rem; color: var(--text-secondary); }
 
         /* ── Alerts ── */
@@ -284,12 +259,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .alert-success { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.28); color: #6ee7b7; }
 
         /* ── Fields ── */
-        .form-group { margin-bottom: 1.35rem; }
+        .form-group { margin-bottom: 1.25rem; }
         .form-label { display: flex; align-items: center; gap: 6px; margin-bottom: .5rem; font-weight: 600; font-size: .875rem; }
         .required { color: var(--error); margin-left: 1px; }
         .input-wrap { position: relative; }
         .form-input {
-            width: 100%; padding: 13px 16px;
+            width: 100%; padding: 12px 16px;
             background: rgba(15,23,42,.55);
             border: 1.5px solid var(--border);
             border-radius: 12px; color: var(--text-primary);
@@ -299,12 +274,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-input:focus { outline: none; border-color: rgba(59,130,246,.6); background: rgba(15,23,42,.75); box-shadow: 0 0 0 4px rgba(59,130,246,.1); }
         .form-input::placeholder { color: var(--text-muted); }
         .form-input.has-right-btn { padding-right: 3rem; }
+
+        /* ── Instagram-style eye toggle ── */
         .btn-eye {
-            position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; cursor: pointer; color: var(--text-muted);
-            font-size: 1rem; padding: .2rem; transition: color .2s; line-height: 1;
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer;
+            color: var(--text-muted);
+            padding: 4px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color .2s;
+            line-height: 0;
         }
         .btn-eye:hover { color: var(--text-primary); }
+        .btn-eye svg { width: 20px; height: 20px; pointer-events: none; }
+        .btn-eye .icon-eye-off { display: none; }
+        .btn-eye.revealed .icon-eye    { display: none; }
+        .btn-eye.revealed .icon-eye-off { display: block; }
 
         /* ── Remember / forgot ── */
         .extras-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: .5rem; }
@@ -325,7 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* ── Submit ── */
         .btn-submit {
-            width: 100%; padding: 14px 24px; border: none; border-radius: 12px;
+            width: 100%; padding: 13px 24px; border: none; border-radius: 12px;
             background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
             color: #fff; font-size: 1rem; font-weight: 700; font-family: 'Poppins', sans-serif;
             cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px;
@@ -354,14 +339,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .back-home { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); text-decoration: none; font-size: .83rem; transition: color .2s; margin-top: .2rem; }
         .back-home:hover { color: var(--text-primary); }
 
-        /* ── Security note ── */
-        .security-note {
-            display: flex; align-items: center; gap: 7px;
-            margin-top: 1.5rem; padding: .7rem 1rem;
-            background: rgba(255,255,255,.03); border: 1px solid var(--border);
-            border-radius: 9px; font-size: .74rem; color: var(--text-muted); line-height: 1.5;
-        }
-
         @media (max-width: 500px) { .card { padding: 2rem 1.4rem; } }
     </style>
 </head>
@@ -381,6 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="brand-row">
             <span class="brand-name">Gurkha Marga</span>
         </div><br><br>
+
         <!-- Heading -->
         <div class="form-heading">
             <h1>Welcome Back</h1>
@@ -434,7 +412,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         autocomplete="current-password"
                         required
                     >
-                    <button type="button" class="btn-eye" id="togglePwBtn" onclick="togglePw()" aria-label="Toggle password">👁️</button>
+                    <button type="button" class="btn-eye" id="togglePwBtn" onclick="togglePw()" aria-label="Toggle password visibility">
+                        <!-- Eye open (shown when password is hidden) -->
+                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <!-- Eye off (shown when password is visible) -->
+                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -463,7 +453,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="../../frontend/landingpage/home.php" class="back-home">← Back to Homepage</a>
         </div>
 
-
     </div>
 </div>
 
@@ -471,9 +460,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 function togglePw() {
     const input = document.getElementById('password');
     const btn   = document.getElementById('togglePwBtn');
-    const hidden = input.type === 'password';
-    input.type      = hidden ? 'text' : 'password';
-    btn.textContent = hidden ? '🙈' : '👁️';
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.classList.toggle('revealed', isHidden);
+    btn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
 }
 
 document.getElementById('loginForm').addEventListener('submit', function(e) {
@@ -487,8 +477,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     const btn   = document.getElementById('submitBtn');
     const label = document.getElementById('btnLabel');
     const arrow = document.getElementById('btnArrow');
-    btn.disabled    = true;
-    label.innerHTML = '<div class="spinner"></div>';
+    btn.disabled      = true;
+    label.innerHTML   = '<div class="spinner"></div>';
     arrow.textContent = 'Signing in…';
 });
 </script>

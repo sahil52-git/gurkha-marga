@@ -618,8 +618,8 @@ body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#0f172a 
         </div>
         <div class="ch-actions">
             <a href="choose_staff.php" class="ch-btn">👥 Team</a>
-            <button class="ch-btn danger" onclick="confirmClear()">🗑 Clear</button>
-            <span class="days-badge">⭐ <?= $daysLeft ?>d</span>
+            <button class="ch-btn danger" onclick="confirmClear()">Clear Chat</button>
+            <span class="days-badge"> <?= $daysLeft ?>days</span>
         </div>
     </div>
 
@@ -689,13 +689,13 @@ body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#0f172a 
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                 </button>
                 <input type="file" id="fileIn" style="display:none" multiple accept="image/*,.pdf,.doc,.docx,.xlsx,.xls,.txt,.zip,.mp3,.m4a,.ogg,.wav" onchange="queueFiles(this)">
-                <button class="ia-btn" title="Camera" onclick="document.getElementById('camIn').click()">
+                <!-- <button class="ia-btn" title="Camera" onclick="document.getElementById('camIn').click()">
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                </button>
+                </button> 
                 <input type="file" id="camIn" style="display:none" accept="image/*" capture="environment" onchange="queueFiles(this)">
                 <button class="ia-btn" id="voiceBtn" title="Voice" onclick="toggleRecording()">
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                </button>
+                </button> -->
                 <button class="ia-btn send" onclick="handleSend()" title="Send">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                 </button>

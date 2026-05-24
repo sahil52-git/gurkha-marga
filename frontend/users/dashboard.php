@@ -593,7 +593,7 @@ body {
             </span>
             <?php endif; ?>
             <a href="progress.php" class="btn btn-outline">Log Progress</a>
-            <a href="workouts.php" class="btn btn-primary">New Workout</a>
+            <a href="workouts.php" class="btn btn-primary">Workout</a>
         </div>
     </div>
 

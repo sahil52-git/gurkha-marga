@@ -201,7 +201,7 @@ if (!empty($user['height']) && !empty($user['weight'])) {
 }
 
 $forceKey    = $user['target_force'] ?? '';
-$forceFlag   = $forceMap[$forceKey][0] ?? '🎖️';
+$forceFlag   = $forceMap[$forceKey][0] ?? '';
 $forceName   = $forceMap[$forceKey][1] ?? ucfirst($forceKey);
 $memberSince = !empty($user['created_at']) ? date('F j, Y', strtotime($user['created_at'])) : 'N/A';
 $lastLogin   = !empty($user['last_login'])  ? date('M j, Y · g:i A', strtotime($user['last_login'])) : 'N/A';
@@ -567,9 +567,9 @@ body { font-family:'Poppins',sans-serif; background:linear-gradient(135deg,#0f17
             <p><?= htmlspecialchars($user['email']) ?> &nbsp;·&nbsp; Member since <?= $memberSince ?></p>
             <div class="profile-tags">
                 <span class="tag gold"><?= $forceFlag ?> <?= htmlspecialchars($forceName) ?></span>
-                <span class="tag blue">⚔️ <?= ucfirst($user['experience_level'] ?? '') ?></span>
+                <span class="tag blue"> <?= ucfirst($user['experience_level'] ?? '') ?></span>
                 <span class="tag green"><?= $user['gender']==='male'?'♂':($user['gender']==='female'?'♀':'⚧') ?> <?= ucfirst($user['gender'] ?? '') ?></span>
-                <span class="tag">📅 Age <?= (int)$user['age'] ?></span>
+                <span class="tag"> Age <?= (int)$user['age'] ?></span>
             </div>
         </div>
         <div class="profile-quick-stats">
@@ -631,7 +631,7 @@ body { font-family:'Poppins',sans-serif; background:linear-gradient(135deg,#0f17
                 <?php endif; ?>
             </div>
             <div class="card">
-                <div class="card-header"><div><div class="card-title">🎖️ Target Force</div><div class="card-subtitle">Your recruitment goal</div></div></div>
+                <div class="card-header"><div><div class="card-title">Target Force</div><div class="card-subtitle">Your recruitment goal</div></div></div>
                 <div style="text-align:center;padding:1.5rem 0">
                     <div style="font-size:4rem;margin-bottom:.75rem"><?= $forceFlag ?></div>
                     <div style="font-size:1.2rem;font-weight:700"><?= htmlspecialchars($forceName) ?></div>
@@ -639,7 +639,7 @@ body { font-family:'Poppins',sans-serif; background:linear-gradient(135deg,#0f17
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><div><div class="card-title">⚔️ Experience Level</div><div class="card-subtitle">Current training level</div></div></div>
+                <div class="card-header"><div><div class="card-title"> Experience Level</div><div class="card-subtitle">Current training level</div></div></div>
                 <div style="padding:.5rem 0">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem"><span style="font-size:.9rem;color:var(--text-secondary)">Level</span><span style="font-weight:600;font-size:1rem"><?= ucfirst($user['experience_level'] ?? 'N/A') ?></span></div>
                     <div class="prog-bar" style="height:10px"><div class="prog-fill prog-gold" style="width:<?= $expProgress ?>%"></div></div>
@@ -673,7 +673,7 @@ body { font-family:'Poppins',sans-serif; background:linear-gradient(135deg,#0f17
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><div><div class="card-title">🎖️ Target Force</div></div></div>
+                <div class="card-header"><div><div class="card-title">Target Force</div></div></div>
                 <div class="force-grid">
                     <?php foreach(['british'=>['🇬🇧','British Army'],'nepal'=>['🇳🇵','Nepal Army'],'indian'=>['🇮🇳','Indian Army'],'singapore'=>['🇸🇬','Singapore Police'],'french'=>['🇫🇷','French Foreign Legion']] as $val=>[$flag,$label]): ?>
                     <input type="radio" class="force-radio" id="force_<?= $val ?>" name="target_force" value="<?= $val ?>" <?= ($user['target_force']??'')===$val?'checked':'' ?> required>
@@ -682,7 +682,7 @@ body { font-family:'Poppins',sans-serif; background:linear-gradient(135deg,#0f17
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><div><div class="card-title">⚔️ Experience Level</div></div></div>
+                <div class="card-header"><div><div class="card-title"> Experience Level</div></div></div>
                 <div class="form-grid" style="grid-template-columns:repeat(4,1fr)">
                     <?php foreach(['beginner'=>['🌱','Beginner','Just starting'],'intermediate'=>['💪','Intermediate','Some experience'],'advanced'=>['🔥','Advanced','Highly trained'],'expert'=>['⚡','Expert','Elite fitness']] as $val=>[$icon,$label,$desc]): ?>
                     <div><input type="radio" class="force-radio" id="exp_<?= $val ?>" name="experience_level" value="<?= $val ?>" <?= ($user['experience_level']??'')===$val?'checked':'' ?> required><label class="force-label" for="exp_<?= $val ?>" style="height:100%"><span style="font-size:1.5rem"><?= $icon ?></span><span style="font-weight:600"><?= $label ?></span><span style="font-size:.7rem;color:var(--text-secondary)"><?= $desc ?></span></label></div>

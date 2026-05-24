@@ -669,7 +669,6 @@ body {
             <div class="log-card">
                 <div class="log-card-head">New Training Session</div>
                 <div class="log-card-body">
-                    <div class="note">Fill only what you measured today — blank fields are skipped.</div>
                     <form id="logForm" onsubmit="submitLog(event)">
                         <div class="form-grid">
                             <div class="fg">
@@ -702,7 +701,7 @@ body {
                             </div>
                             <div class="fg" style="grid-column:1/-1">
                                 <label class="fl">Notes (optional)</label>
-                                <input class="fi" type="text" name="notes" maxlength="255" placeholder="e.g. Morning run, felt strong on pull-ups...">
+                                <input class="fi" type="text" name="notes" maxlength="255" placeholder="e.g: Lovely!">
                             </div>
                         </div>
                         <div class="form-footer">

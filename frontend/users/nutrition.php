@@ -1,5 +1,5 @@
 <?php
-// frontend/users/nutrition.php
+
 session_start();
 define('BASE_PATH', dirname(dirname(dirname(__FILE__))));
 require_once BASE_PATH . '/backend/database.php';
@@ -501,10 +501,6 @@ body {
             <div class="sec-header">
                 <div class="sec-title">Daily Meal Plan</div>
                 <span class="sec-badge"><?= htmlspecialchars($firstName) ?>'s Plan</span>
-            </div>
-
-            <div class="note">
-                Tap any meal to expand. Substitute with local equivalents where needed. Eat every 3–4 hours and keep protein at every meal.
             </div>
 
             <div class="meal-list">

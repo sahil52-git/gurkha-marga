@@ -1,13 +1,8 @@
 <?php
-// frontend/users/api_questions.php
-// ─────────────────────────────────────────────────────────
-// AJAX endpoint — called by questions.php JS
-// Returns JSON: { "questions": [...] }
-// ─────────────────────────────────────────────────────────
+
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
-// ── Auth ─────────────────────────────────────────────────
 if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorised', 'questions' => []]);
@@ -28,7 +23,6 @@ if (!$isPremium) {
     exit();
 }
 
-// ── User's force ─────────────────────────────────────────
 $user     = fetchOne(
     "SELECT target_force FROM users WHERE id = ? AND is_active = 1 LIMIT 1",
     [$userId]
@@ -45,7 +39,6 @@ if (!in_array($cat, $VALID_CATS, true)) {
     exit();
 }
 
-// ── Fetch from DB ─────────────────────────────────────────
 try {
     $rows = fetchAll(
         "SELECT id, question_type, question_text,

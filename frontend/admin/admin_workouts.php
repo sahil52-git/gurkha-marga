@@ -21,11 +21,11 @@ function sanitizeSteps(array $titles, array $descs): array {
     }
     return $steps;
 }
-function sanitizeMuscles(array $names, array $types, array $colors): array {
+function sanitizeMuscles(array $names, array $types): array {
     $muscles = [];
     foreach ($names as $i => $n) {
         $n = trim($n);
-        if ($n) $muscles[] = ['name' => $n, 'type' => trim($types[$i] ?? 'Primary'), 'color' => trim($colors[$i] ?? '#3b82f6')];
+        if ($n) $muscles[] = ['name' => $n, 'type' => trim($types[$i] ?? 'Primary'), 'color' => '#3b82f6'];
     }
     return $muscles;
 }
@@ -100,7 +100,7 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id  = (int)$_POST['id'];
     $pub = isset($_POST['is_published']) ? 1 : 0;
     $steps   = sanitizeSteps($_POST['step_title'] ?? [], $_POST['step_desc'] ?? []);
-    $muscles = sanitizeMuscles($_POST['muscle_name'] ?? [], $_POST['muscle_type'] ?? [], $_POST['muscle_color'] ?? []);
+    $muscles = sanitizeMuscles($_POST['muscle_name'] ?? [], $_POST['muscle_type'] ?? []);
     $tips    = sanitizeTips($_POST['tip_text'] ?? []);
 
     $thumbSql = ''; $thumbParams = [];
@@ -169,11 +169,10 @@ if ($action === 'store' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($uploadResult !== null) $thumbFilename = $uploadResult;
 
     $steps   = sanitizeSteps($_POST['step_title'] ?? [], $_POST['step_desc'] ?? []);
-    $muscles = sanitizeMuscles($_POST['muscle_name'] ?? [], $_POST['muscle_type'] ?? [], $_POST['muscle_color'] ?? []);
+    $muscles = sanitizeMuscles($_POST['muscle_name'] ?? [], $_POST['muscle_type'] ?? []);
     $tips    = sanitizeTips($_POST['tip_text'] ?? []);
     $adminId = $_SESSION['admin_id'] ?? 0;
 
-    // ── FIX: Use exactly what was submitted, allow empty glb ──
     $glbFile = trim($_POST['glb_file'] ?? '');
 
     try {
@@ -249,7 +248,6 @@ if (!isset($_SESSION['workout_token'])) {
 }
 ensureThumbDir();
 
-// ── GLB scanner — FIXED: only use real files, no fallbacks ───────────────────
 $modelsDir = dirname(dirname(dirname(__FILE__))) . '/models/';
 $glbFiles  = [];
 if (is_dir($modelsDir)) {
@@ -259,7 +257,6 @@ if (is_dir($modelsDir)) {
         sort($glbFiles);
     }
 }
-// No fallback to exercise1.glb..exercise8.glb — that was causing the wrong GLB selection bug
 
 $search    = $_GET['search']   ?? '';
 $catFilter = $_GET['category'] ?? '';
@@ -301,24 +298,21 @@ if ($editWorkout) {
 }
 
 $defaultSteps   = [['title'=>'','desc'=>'']];
-$defaultMuscles = [['name'=>'','type'=>'Primary','color'=>'#3b82f6']];
+$defaultMuscles = [['name'=>'','type'=>'Primary']];
 $defaultTips    = [['text'=>'']];
 ?>
 
 <style>
-/* ── Form sections ── */
 .form-section { margin-bottom: 1.5rem; }
 .form-section-title {
   font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   color:var(--text-3); padding-bottom:.55rem; border-bottom:1px solid var(--border);
   margin-bottom:.9rem; display:flex; align-items:center; gap:.4rem;
 }
-.section-icon {
-  width:16px; height:16px; flex-shrink:0; color:var(--text-3);
-}
+.section-icon { width:16px; height:16px; flex-shrink:0; color:var(--text-3); }
 .dynamic-row { display:grid; gap:.6rem; margin-bottom:.55rem; align-items:start; }
 .dynamic-row.steps-row  { grid-template-columns: 1fr 2fr auto; }
-.dynamic-row.muscle-row { grid-template-columns: 2fr 1fr 64px auto; }
+.dynamic-row.muscle-row { grid-template-columns: 2fr 1fr auto; }
 .dynamic-row.tip-row    { grid-template-columns: 1fr auto; }
 .row-remove {
   width:28px; height:28px; background:var(--red-dim); border:1px solid var(--red-hi);
@@ -333,9 +327,6 @@ $defaultTips    = [['text'=>'']];
   cursor:pointer; padding:.25rem 0; transition:opacity .15s;
 }
 .add-row-btn:hover { opacity:.7; }
-.color-swatch { width:100%; height:34px; border-radius:5px; border:1px solid var(--border); cursor:pointer; }
-
-/* ── Thumb upload ── */
 .thumb-upload-wrap {
   border:2px dashed var(--border-hi); border-radius:10px; overflow:hidden;
   cursor:pointer; transition:border-color .15s; background:rgba(15,23,42,.4); position:relative;
@@ -358,7 +349,6 @@ $defaultTips    = [['text'=>'']];
   background:rgba(0,0,0,.55); font-size:.62rem; color:rgba(255,255,255,.7);
   padding:.2rem .5rem; text-align:center;
 }
-/* Thumb in table */
 .tbl-thumb { width:40px; height:30px; border-radius:5px; object-fit:cover; border:1px solid var(--border); display:block; }
 .tbl-no-thumb {
   width:40px; height:30px; border-radius:5px;
@@ -366,8 +356,6 @@ $defaultTips    = [['text'=>'']];
   display:flex; align-items:center; justify-content:center;
 }
 .tbl-no-thumb svg { width:13px; height:13px; color:var(--text-3); }
-
-/* ── Confirm dialog ── */
 .confirm-overlay {
   position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
   z-index:9999; display:none; align-items:center; justify-content:center; padding:1rem;
@@ -384,8 +372,8 @@ $defaultTips    = [['text'=>'']];
   width:44px; height:44px; border-radius:10px; margin:0 auto .9rem;
   display:flex; align-items:center; justify-content:center;
 }
-.confirm-icon.danger { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.25); }
-.confirm-icon.warning { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); }
+.confirm-icon.danger  { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.25); }
+.confirm-icon.warning { background:rgba(245,158,11,.1);  border:1px solid rgba(245,158,11,.25); }
 .confirm-icon svg { width:22px; height:22px; }
 .confirm-title { font-size:1.05rem; font-weight:700; margin-bottom:.4rem; }
 .confirm-desc  { font-size:.82rem; color:var(--text-2, #94a3b8); margin-bottom:1.5rem; line-height:1.5; }
@@ -395,10 +383,10 @@ $defaultTips    = [['text'=>'']];
   cursor:pointer; font-family:inherit; border:none; display:inline-flex;
   align-items:center; gap:6px; transition:all .15s;
 }
-.confirm-btn-cancel { background:rgba(255,255,255,.07); color:#94a3b8; border:1px solid rgba(255,255,255,.1); }
-.confirm-btn-cancel:hover { background:rgba(255,255,255,.12); color:#fff; }
-.confirm-btn-danger { background:rgba(239,68,68,.15); color:#fca5a5; border:1px solid rgba(239,68,68,.3); }
-.confirm-btn-danger:hover { background:rgba(239,68,68,.25); }
+.confirm-btn-cancel  { background:rgba(255,255,255,.07); color:#94a3b8; border:1px solid rgba(255,255,255,.1); }
+.confirm-btn-cancel:hover  { background:rgba(255,255,255,.12); color:#fff; }
+.confirm-btn-danger  { background:rgba(239,68,68,.15); color:#fca5a5; border:1px solid rgba(239,68,68,.3); }
+.confirm-btn-danger:hover  { background:rgba(239,68,68,.25); }
 .confirm-btn-warning { background:rgba(245,158,11,.12); color:#fcd34d; border:1px solid rgba(245,158,11,.3); }
 .confirm-btn-warning:hover { background:rgba(245,158,11,.2); }
 </style>
@@ -535,6 +523,7 @@ $defaultTips    = [['text'=>'']];
     <form method="POST" action="admin_workouts.php?action=store" id="createForm" enctype="multipart/form-data">
       <input type="hidden" name="workout_token" value="<?= htmlspecialchars($_SESSION['workout_token'] ?? '') ?>">
 
+      <!-- Basic Information -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -570,6 +559,7 @@ $defaultTips    = [['text'=>'']];
         </div>
       </div>
 
+      <!-- Thumbnail -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -585,6 +575,7 @@ $defaultTips    = [['text'=>'']];
         </div>
       </div>
 
+      <!-- Steps -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
@@ -605,6 +596,7 @@ $defaultTips    = [['text'=>'']];
         <button type="button" class="add-row-btn" onclick="addStep('createStepsList','createStepsCount')">+ Add Step</button>
       </div>
 
+      <!-- Muscle Groups — NO color picker -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -615,9 +607,8 @@ $defaultTips    = [['text'=>'']];
           <div class="dynamic-row muscle-row">
             <input type="text" name="muscle_name[]" placeholder="e.g. Quadriceps" value="<?= htmlspecialchars($m['name']) ?>">
             <select name="muscle_type[]">
-              <?php foreach (['Primary','Secondary','Stabiliser'] as $t): ?><option <?= $m['type']===$t?'selected':'' ?>><?= $t ?></option><?php endforeach; ?>
+              <?php foreach (['Primary','Secondary','Stabiliser'] as $t): ?><option <?= ($m['type']??'')===$t?'selected':'' ?>><?= $t ?></option><?php endforeach; ?>
             </select>
-            <input type="color" name="muscle_color[]" class="color-swatch" value="<?= $m['color'] ?>">
             <button type="button" class="row-remove" onclick="removeRow(this)">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -627,6 +618,7 @@ $defaultTips    = [['text'=>'']];
         <button type="button" class="add-row-btn" onclick="addMuscle('createMusclesList')">+ Add Muscle</button>
       </div>
 
+      <!-- Pro Tips -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -667,6 +659,7 @@ $defaultTips    = [['text'=>'']];
     <form method="POST" action="admin_workouts.php?action=update" enctype="multipart/form-data">
       <input type="hidden" name="id" value="<?= $editWorkout['id'] ?>">
 
+      <!-- Basic Information -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -706,6 +699,7 @@ $defaultTips    = [['text'=>'']];
         </div>
       </div>
 
+      <!-- Thumbnail -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -738,6 +732,7 @@ $defaultTips    = [['text'=>'']];
         <?php endif; ?>
       </div>
 
+      <!-- Steps -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
@@ -758,19 +753,19 @@ $defaultTips    = [['text'=>'']];
         <button type="button" class="add-row-btn" onclick="addStep('editStepsList','editStepsCount')">+ Add Step</button>
       </div>
 
+      <!-- Muscle Groups — NO color picker -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Muscle Groups
         </div>
         <div id="editMusclesList">
-          <?php foreach (!empty($editMuscles) ? $editMuscles : [['name'=>'','type'=>'Primary','color'=>'#3b82f6']] as $m): ?>
+          <?php foreach (!empty($editMuscles) ? $editMuscles : [['name'=>'','type'=>'Primary']] as $m): ?>
           <div class="dynamic-row muscle-row">
             <input type="text" name="muscle_name[]" value="<?= htmlspecialchars($m['name']) ?>" placeholder="e.g. Quadriceps">
             <select name="muscle_type[]">
               <?php foreach (['Primary','Secondary','Stabiliser'] as $t): ?><option <?= ($m['type']??'')===$t?'selected':'' ?>><?= $t ?></option><?php endforeach; ?>
             </select>
-            <input type="color" name="muscle_color[]" class="color-swatch" value="<?= htmlspecialchars($m['color']??'#3b82f6') ?>">
             <button type="button" class="row-remove" onclick="removeRow(this)">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -780,6 +775,7 @@ $defaultTips    = [['text'=>'']];
         <button type="button" class="add-row-btn" onclick="addMuscle('editMusclesList')">+ Add Muscle</button>
       </div>
 
+      <!-- Pro Tips -->
       <div class="form-section">
         <div class="form-section-title">
           <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -808,7 +804,6 @@ $defaultTips    = [['text'=>'']];
 <?php endif; ?>
 
 <script>
-// ── Row helpers ───────────────────────────────────────────────────────────────
 function removeRow(btn, counterId, listId) {
   const row = btn.closest('.dynamic-row');
   if (row) { row.remove(); if (counterId && listId) updateCount(counterId, listId); }
@@ -817,14 +812,13 @@ function updateCount(counterId, listId) {
   const el = document.getElementById(counterId);
   const list = document.getElementById(listId);
   if (!el || !list) return;
-  const cnt = list.querySelectorAll('.dynamic-row').length;
-  el.textContent = '(' + cnt + ')';
+  el.textContent = '(' + list.querySelectorAll('.dynamic-row').length + ')';
 }
 const xSvg = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
 function addStep(listId, counterId) {
   const list = document.getElementById(listId);
   const row  = document.createElement('div');
-  row.className = 'dynamic-row steps-row'; row.setAttribute('data-row','step');
+  row.className = 'dynamic-row steps-row';
   row.innerHTML = `
     <input type="text" name="step_title[]" placeholder="Step title">
     <textarea name="step_desc[]" rows="2" placeholder="Description..."></textarea>
@@ -839,8 +833,11 @@ function addMuscle(listId) {
   row.className = 'dynamic-row muscle-row';
   row.innerHTML = `
     <input type="text" name="muscle_name[]" placeholder="e.g. Quadriceps">
-    <select name="muscle_type[]"><option>Primary</option><option>Secondary</option><option>Stabiliser</option></select>
-    <input type="color" name="muscle_color[]" class="color-swatch" value="#3b82f6">
+    <select name="muscle_type[]">
+      <option>Primary</option>
+      <option>Secondary</option>
+      <option>Stabiliser</option>
+    </select>
     <button type="button" class="row-remove" onclick="removeRow(this)">${xSvg}</button>`;
   list.appendChild(row);
   row.querySelector('input').focus();
@@ -856,7 +853,6 @@ function addTip(listId) {
   row.querySelector('input').focus();
 }
 
-// ── Thumb preview ─────────────────────────────────────────────────────────────
 function previewThumb(input, previewId) {
   const preview = document.getElementById(previewId);
   const file    = input.files[0];
@@ -872,16 +868,14 @@ function previewThumb(input, previewId) {
   reader.readAsDataURL(file);
 }
 
-// ── Confirm dialog ────────────────────────────────────────────────────────────
 function showConfirm({ title, desc, actionHref, btnClass, btnText, iconType, iconPath }) {
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmDesc').textContent  = desc;
   const btn = document.getElementById('confirmActionBtn');
-  btn.href      = actionHref;
-  btn.className = 'confirm-btn ' + btnClass;
+  btn.href        = actionHref;
+  btn.className   = 'confirm-btn ' + btnClass;
   btn.textContent = btnText;
-  const icon = document.getElementById('confirmIcon');
-  icon.className = 'confirm-icon ' + iconType;
+  document.getElementById('confirmIcon').className = 'confirm-icon ' + iconType;
   document.getElementById('confirmIconSvg').innerHTML = iconPath;
   document.getElementById('confirmDialog').classList.add('open');
 }
@@ -896,38 +890,26 @@ function confirmDelete(href, title) {
   showConfirm({
     title: 'Delete Exercise',
     desc: `Are you sure you want to permanently delete "${title}"? This cannot be undone.`,
-    actionHref: href,
-    btnClass: 'confirm-btn-danger',
-    btnText: 'Delete',
-    iconType: 'danger',
+    actionHref: href, btnClass: 'confirm-btn-danger', btnText: 'Delete', iconType: 'danger',
     iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>',
   });
 }
 function confirmToggle(href, title, isPublished) {
   if (isPublished) {
     showConfirm({
-      title: 'Hide Exercise',
-      desc: `"${title}" will be hidden from users.`,
-      actionHref: href,
-      btnClass: 'confirm-btn-warning',
-      btnText: 'Hide',
-      iconType: 'warning',
+      title: 'Hide Exercise', desc: `"${title}" will be hidden from users.`,
+      actionHref: href, btnClass: 'confirm-btn-warning', btnText: 'Hide', iconType: 'warning',
       iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>',
     });
   } else {
     showConfirm({
-      title: 'Publish Exercise',
-      desc: `"${title}" will be visible to users.`,
-      actionHref: href,
-      btnClass: 'confirm-btn-warning',
-      btnText: 'Publish',
-      iconType: 'warning',
+      title: 'Publish Exercise', desc: `"${title}" will be visible to users.`,
+      actionHref: href, btnClass: 'confirm-btn-warning', btnText: 'Publish', iconType: 'warning',
       iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>',
     });
   }
 }
 
-// Dedup guard on create
 document.getElementById('createForm')?.addEventListener('submit', function() {
   const btn = document.getElementById('createBtn');
   btn.disabled = true; btn.textContent = 'Saving...';

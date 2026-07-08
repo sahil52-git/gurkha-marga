@@ -656,7 +656,7 @@ if (isset($_SESSION["user_id"])) {
                             </div>
                         ` : ''}
                         <div class="result-actions">
-                            <a href="auth/register.php" class="btn-result btn-register">Create Account & Start Training</a>
+                            <a href="../auth/register.php" class="btn-result btn-register">Create Account & Start Training</a>
                         </div>
                     </div>
                 `;
@@ -675,7 +675,7 @@ if (isset($_SESSION["user_id"])) {
                                 ${eligibleForces.map(f => `<span class="force-badge">${f}</span>`).join('')}
                             </div>
                             <div class="result-actions">
-                                <a href="register.php" class="btn-result btn-register">Create Account & Start Training</a>
+                                <a href="../auth/register.php" class="btn-result btn-register">Create Account & Start Training</a>
                             </div>
                         ` : `
                             <p class="result-message">

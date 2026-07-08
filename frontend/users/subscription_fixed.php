@@ -442,7 +442,7 @@ body {
             <?php if ($isPremium): ?>
             <a href="questions.php" class="btn btn-primary"> Start Quiz</a>
             <?php if (function_exists('getUserConsultants')): ?>
-            <a href="chat.php" class="btn btn-outline">💬 Chat</a>
+            <a href="chat.php" class="btn btn-outline"> Chat</a>
             <?php endif; ?>
             <?php endif; ?>
         </div>

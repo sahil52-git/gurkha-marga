@@ -39,7 +39,7 @@ if (isset($_SESSION["user_id"])) {
         <div class="container">
             <div class="nav-brand">
                 <div class="logo-container">
-                    <img src="\gurkha-marga\frontend\image\gurkhalogo.png" type="image" alt="Loading....">
+                    <img src="../image/gurkhalogo.png" alt="Gurkha Marga Logo">
                     <span class="brand-name">Gurkha Marga</span>
                 </div>
             </div>
